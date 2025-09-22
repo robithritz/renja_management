@@ -32,41 +32,18 @@ class RenjaListPage extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
         if (c.calendarMode.value) {
-          return _CalendarView();
+          return Column(
+            children: [
+              _FilterBar(),
+              Expanded(child: _CalendarView()),
+            ],
+          );
         }
         // List mode with filter by instansi
         final filtered = c.filteredItems;
         return Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Row(
-                children: [
-                  const Text('Filter: '),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: DropdownButton<Instansi?>(
-                      isExpanded: true,
-                      value: c.selectedInstansi.value,
-                      hint: const Text('All Instansi'),
-                      items: [
-                        const DropdownMenuItem<Instansi?>(
-                          value: null,
-                          child: Text('All'),
-                        ),
-                        ...Instansi.values.map(
-                          (e) => DropdownMenuItem<Instansi?>(
-                            value: e,
-                            child: Text(e.asString),
-                          ),
-                        ),
-                      ],
-                      onChanged: (v) => c.selectedInstansi.value = v,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _FilterBar(),
             Expanded(
               child: filtered.isEmpty
                   ? const Center(child: Text('No data. Tap + to add.'))
@@ -174,6 +151,7 @@ class _CalendarView extends StatelessWidget {
                   headerFmt.format(month),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
+
                 IconButton(
                   icon: const Icon(Icons.chevron_right),
                   onPressed: () {
@@ -230,8 +208,9 @@ class _CalendarView extends StatelessWidget {
                             final r = items[i];
                             return ListTile(
                               title: Text(r.kegiatanDesc),
+                              isThreeLine: true,
                               subtitle: Text(
-                                '${r.time} • ${r.instansi.asString}',
+                                '${r.time} • ${r.instansi.asString}\nHijriah: ${r.bulanHijriah} ${r.tahunHijriah}',
                               ),
                             );
                           },
@@ -249,6 +228,53 @@ class _CalendarView extends StatelessWidget {
                     child: Stack(
                       children: [
                         Positioned(top: 6, right: 6, child: Text('$day')),
+                        // Show up to three kegiatan labels, color-coded by instansi
+                        Positioned.fill(
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                              top: 22,
+                              left: 4,
+                              right: 4,
+                              bottom: 14,
+                            ),
+                            child: has
+                                ? Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      ...items
+                                          .take(3)
+                                          .map(
+                                            (e) => Padding(
+                                              padding: const EdgeInsets.only(
+                                                bottom: 2,
+                                              ),
+                                              child: Text(
+                                                e.kegiatanDesc,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: _instansiColor(
+                                                    e.instansi,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      if (items.length > 3)
+                                        const Text(
+                                          '...',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                    ],
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                        ),
                         if (has)
                           Positioned(
                             bottom: 6,
@@ -273,6 +299,100 @@ class _CalendarView extends StatelessWidget {
             ),
           ),
         ],
+      );
+    });
+  }
+}
+
+Color _instansiColor(Instansi i) {
+  switch (i) {
+    case Instansi.EKL:
+      return Colors.teal;
+    case Instansi.DAKWAH:
+      return Colors.deepPurple;
+    case Instansi.IKK:
+      return Colors.orange;
+    case Instansi.TRB:
+      return Colors.blue;
+    case Instansi.UP:
+      return Colors.pink;
+  }
+}
+
+class _FilterBar extends StatelessWidget {
+  const _FilterBar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = Get.find<RenjaController>();
+    return Obx(() {
+      final years = c.items.map((e) => e.tahunHijriah).toSet().toList()..sort();
+      final months = c.items.map((e) => e.bulanHijriah).toSet().toList()
+        ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        child: Wrap(
+          spacing: 12,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            const Text('Filter:'),
+            SizedBox(
+              width: 160,
+              child: DropdownButton<Instansi?>(
+                isExpanded: true,
+                value: c.selectedInstansi.value,
+                hint: const Text('Instansi'),
+                items: [
+                  const DropdownMenuItem<Instansi?>(
+                    value: null,
+                    child: Text('All'),
+                  ),
+                  ...Instansi.values.map(
+                    (e) => DropdownMenuItem<Instansi?>(
+                      value: e,
+                      child: Text(e.asString),
+                    ),
+                  ),
+                ],
+                onChanged: (v) => c.selectedInstansi.value = v,
+              ),
+            ),
+            SizedBox(
+              width: 150,
+              child: DropdownButton<int?>(
+                isExpanded: true,
+                value: c.selectedTahunHijriah.value,
+                hint: const Text('Tahun Hijriah'),
+                items: [
+                  const DropdownMenuItem<int?>(value: null, child: Text('All')),
+                  ...years.map(
+                    (y) => DropdownMenuItem<int?>(value: y, child: Text('$y')),
+                  ),
+                ],
+                onChanged: (v) => c.selectedTahunHijriah.value = v,
+              ),
+            ),
+            SizedBox(
+              width: 170,
+              child: DropdownButton<String?>(
+                isExpanded: true,
+                value: c.selectedBulanHijriah.value,
+                hint: const Text('Bulan Hijriah'),
+                items: [
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('All'),
+                  ),
+                  ...months.map(
+                    (m) => DropdownMenuItem<String?>(value: m, child: Text(m)),
+                  ),
+                ],
+                onChanged: (v) => c.selectedBulanHijriah.value = v,
+              ),
+            ),
+          ],
+        ),
       );
     });
   }
