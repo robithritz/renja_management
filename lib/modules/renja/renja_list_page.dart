@@ -209,9 +209,23 @@ class _CalendarView extends StatelessWidget {
                             final r = items[i];
                             return ListTile(
                               title: Text(r.kegiatanDesc),
-                              isThreeLine: true,
-                              subtitle: Text(
-                                '${r.time} • ${r.instansi.asString}\nHijriah: ${r.bulanHijriah.asString} ${r.tahunHijriah}',
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('${r.time} • ${r.instansi.asString}'),
+                                  Text(
+                                    'Hijriah: ${r.bulanHijriah.asString} ${r.tahunHijriah}',
+                                  ),
+                                  if (r.sasaran.isNotEmpty)
+                                    Text('Sasaran: ${r.sasaran}'),
+                                  if (r.tujuan.isNotEmpty)
+                                    Text('Tujuan: ${r.tujuan}'),
+                                  if (r.target.isNotEmpty)
+                                    Text('Target: ${r.target}'),
+                                  if (r.pic.isNotEmpty) Text('PIC: ${r.pic}'),
+                                  if (r.titikDesc.isNotEmpty)
+                                    Text('Titik: ${r.titikDesc}'),
+                                ],
                               ),
                             );
                           },
