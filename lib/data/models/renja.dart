@@ -1,9 +1,10 @@
 import '../../shared/enums/instansi.dart';
+import '../../shared/enums/hijriah_month.dart';
 
 class Renja {
   final String uuid;
   final String date; // ISO YYYY-MM-DD
-  final String bulanHijriah; // e.g., Muharram (free text)
+  final HijriahMonth bulanHijriah;
   final int tahunHijriah;
   final int day; // 1-31
   final String time; // HH:mm
@@ -42,7 +43,7 @@ class Renja {
   Renja copyWith({
     String? uuid,
     String? date,
-    String? bulanHijriah,
+    HijriahMonth? bulanHijriah,
     int? tahunHijriah,
     int? day,
     String? time,
@@ -81,7 +82,7 @@ class Renja {
     return Renja(
       uuid: map['uuid'] as String,
       date: map['date'] as String,
-      bulanHijriah: map['bulan_hijriah'] as String,
+      bulanHijriah: HijriahMonthX.fromDb(map['bulan_hijriah'] as String),
       tahunHijriah: map['tahun_hijriah'] as int,
       day: map['day'] as int,
       time: map['time'] as String,
@@ -102,7 +103,7 @@ class Renja {
   Map<String, dynamic> toMap() => {
     'uuid': uuid,
     'date': date,
-    'bulan_hijriah': bulanHijriah,
+    'bulan_hijriah': bulanHijriah.name,
     'tahun_hijriah': tahunHijriah,
     'day': day,
     'time': time,

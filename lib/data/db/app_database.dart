@@ -43,7 +43,7 @@ class AppDatabase {
     final path = p.join(dbPath, 'renja_management.db');
     return openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: (db, version) async {
         await db.execute(_createTableRenja);
       },

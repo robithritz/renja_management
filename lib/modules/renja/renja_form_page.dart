@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../shared/enums/instansi.dart';
+import '../../shared/enums/hijriah_month.dart';
 import '../../data/models/renja.dart';
 import '../../shared/formatters/rupiah_input_formatter.dart';
 import 'renja_controller.dart';
@@ -19,7 +20,7 @@ class _RenjaFormPageState extends State<RenjaFormPage> {
   final _formKey = GlobalKey<FormState>();
 
   final _dateCtrl = TextEditingController();
-  final _bulanHijriahCtrl = TextEditingController();
+  HijriahMonth _bulanHijriah = HijriahMonth.muharram;
   final _tahunHijriahCtrl = TextEditingController();
   final _dayCtrl = TextEditingController();
   final _timeCtrl = TextEditingController();
@@ -39,7 +40,7 @@ class _RenjaFormPageState extends State<RenjaFormPage> {
     final e = widget.existing;
     if (e != null) {
       _dateCtrl.text = e.date;
-      _bulanHijriahCtrl.text = e.bulanHijriah;
+      _bulanHijriah = e.bulanHijriah;
       _tahunHijriahCtrl.text = e.tahunHijriah.toString();
       _dayCtrl.text = e.day.toString();
       _timeCtrl.text = e.time;
@@ -62,7 +63,6 @@ class _RenjaFormPageState extends State<RenjaFormPage> {
   @override
   void dispose() {
     _dateCtrl.dispose();
-    _bulanHijriahCtrl.dispose();
     _tahunHijriahCtrl.dispose();
     _dayCtrl.dispose();
     _timeCtrl.dispose();
@@ -99,12 +99,7 @@ class _RenjaFormPageState extends State<RenjaFormPage> {
               ),
               Row(
                 children: [
-                  Expanded(
-                    child: _text(
-                      _bulanHijriahCtrl,
-                      label: 'Bulan Hijriah (teks)',
-                    ),
-                  ),
+                  Expanded(child: _dropdownBulanHijriah()),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _number(_tahunHijriahCtrl, label: 'Tahun Hijriah'),
@@ -121,11 +116,17 @@ class _RenjaFormPageState extends State<RenjaFormPage> {
               _text(_tujuanCtrl, label: 'Tujuan'),
               _number(_volumeCtrl, label: 'Volume'),
               _dropdownInstansi(),
-              TextFormField(
-                controller: _costCtrl,
-                keyboardType: TextInputType.number,
-                inputFormatters: [RupiahInputFormatter()],
-                decoration: const InputDecoration(labelText: 'Cost (Rupiah)'),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: TextFormField(
+                  controller: _costCtrl,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [RupiahInputFormatter()],
+                  decoration: const InputDecoration(
+                    labelText: 'Cost (Rupiah)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
@@ -134,7 +135,7 @@ class _RenjaFormPageState extends State<RenjaFormPage> {
                   if (widget.existing == null) {
                     await c.create(
                       date: _dateCtrl.text.trim(),
-                      bulanHijriah: _bulanHijriahCtrl.text.trim(),
+                      bulanHijriah: _bulanHijriah,
                       tahunHijriah:
                           int.tryParse(_tahunHijriahCtrl.text.trim()) ?? 0,
                       day: int.tryParse(_dayCtrl.text.trim()) ?? 1,
@@ -154,9 +155,7 @@ class _RenjaFormPageState extends State<RenjaFormPage> {
                     await c.updateItem(
                       e.copyWith(
                         date: _dateCtrl.text.trim(),
-                        bulanHijriah: _bulanHijriahCtrl.text.trim().isEmpty
-                            ? e.bulanHijriah
-                            : _bulanHijriahCtrl.text.trim(),
+                        bulanHijriah: _bulanHijriah,
                         tahunHijriah:
                             int.tryParse(_tahunHijriahCtrl.text.trim()) ??
                             e.tahunHijriah,
@@ -187,14 +186,39 @@ class _RenjaFormPageState extends State<RenjaFormPage> {
     );
   }
 
+  Widget _dropdownBulanHijriah() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: DropdownButtonFormField<HijriahMonth>(
+        value: _bulanHijriah,
+        decoration: const InputDecoration(
+          labelText: 'Bulan Hijriah',
+          border: OutlineInputBorder(),
+        ),
+        items: HijriahMonth.values
+            .map((m) => DropdownMenuItem(value: m, child: Text(m.asString)))
+            .toList(),
+        onChanged: (v) {
+          if (v != null) setState(() => _bulanHijriah = v);
+        },
+      ),
+    );
+  }
+
   Widget _dropdownInstansi() {
-    return DropdownButtonFormField<Instansi>(
-      value: _instansi,
-      decoration: const InputDecoration(labelText: 'Instansi'),
-      items: Instansi.values
-          .map((e) => DropdownMenuItem(value: e, child: Text(e.asString)))
-          .toList(),
-      onChanged: (v) => setState(() => _instansi = v ?? Instansi.EKL),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: DropdownButtonFormField<Instansi>(
+        value: _instansi,
+        decoration: const InputDecoration(
+          labelText: 'Instansi',
+          border: OutlineInputBorder(),
+        ),
+        items: Instansi.values
+            .map((e) => DropdownMenuItem(value: e, child: Text(e.asString)))
+            .toList(),
+        onChanged: (v) => setState(() => _instansi = v ?? Instansi.EKL),
+      ),
     );
   }
 
@@ -204,22 +228,42 @@ class _RenjaFormPageState extends State<RenjaFormPage> {
     bool required = false,
     VoidCallback? onTap,
   }) {
-    return TextFormField(
-      controller: c,
-      decoration: InputDecoration(labelText: label),
-      readOnly: onTap != null,
-      onTap: onTap,
-      validator: required
-          ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
-          : null,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextFormField(
+        controller: c,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
+          ),
+        ),
+        readOnly: onTap != null,
+        onTap: onTap,
+        validator: required
+            ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+            : null,
+      ),
     );
   }
 
   Widget _number(TextEditingController c, {required String label}) {
-    return TextFormField(
-      controller: c,
-      keyboardType: TextInputType.number,
-      decoration: InputDecoration(labelText: label),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextFormField(
+        controller: c,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
+          ),
+        ),
+      ),
     );
   }
 

@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../../data/models/renja.dart';
 import '../../data/repositories/renja_repository.dart';
 import '../../shared/enums/instansi.dart';
+import '../../shared/enums/hijriah_month.dart';
 
 class RenjaController extends GetxController {
   RenjaController(this._repo);
@@ -15,7 +16,7 @@ class RenjaController extends GetxController {
   // UI state
   final selectedInstansi = Rxn<Instansi>();
   final selectedTahunHijriah = Rxn<int>();
-  final selectedBulanHijriah = Rxn<String>();
+  final selectedBulanHijriah = Rxn<HijriahMonth>();
 
   final calendarMode = false.obs;
   final currentMonth = DateTime(DateTime.now().year, DateTime.now().month).obs;
@@ -33,9 +34,8 @@ class RenjaController extends GetxController {
       list = list.where((r) => r.tahunHijriah == th);
     }
     final bln = selectedBulanHijriah.value;
-    if (bln != null && bln.trim().isNotEmpty) {
-      final v = bln.trim().toLowerCase();
-      list = list.where((r) => r.bulanHijriah.toLowerCase() == v);
+    if (bln != null) {
+      list = list.where((r) => r.bulanHijriah == bln);
     }
 
     return list.toList();
@@ -58,7 +58,7 @@ class RenjaController extends GetxController {
 
   Future<void> create({
     required String date,
-    required String bulanHijriah,
+    required HijriahMonth bulanHijriah,
     required int tahunHijriah,
     required int day,
     required String time,

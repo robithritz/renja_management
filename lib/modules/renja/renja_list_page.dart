@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../shared/enums/instansi.dart';
+import '../../shared/enums/hijriah_month.dart';
 import 'renja_controller.dart';
 import 'renja_form_page.dart';
 
@@ -210,7 +211,7 @@ class _CalendarView extends StatelessWidget {
                               title: Text(r.kegiatanDesc),
                               isThreeLine: true,
                               subtitle: Text(
-                                '${r.time} • ${r.instansi.asString}\nHijriah: ${r.bulanHijriah} ${r.tahunHijriah}',
+                                '${r.time} • ${r.instansi.asString}\nHijriah: ${r.bulanHijriah.asString} ${r.tahunHijriah}',
                               ),
                             );
                           },
@@ -327,8 +328,8 @@ class _FilterBar extends StatelessWidget {
     final c = Get.find<RenjaController>();
     return Obx(() {
       final years = c.items.map((e) => e.tahunHijriah).toSet().toList()..sort();
-      final months = c.items.map((e) => e.bulanHijriah).toSet().toList()
-        ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+      final months = HijriahMonth.values.toList()
+        ..sort((a, b) => a.asString.compareTo(b.asString));
       return Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
         child: Wrap(
@@ -375,17 +376,20 @@ class _FilterBar extends StatelessWidget {
             ),
             SizedBox(
               width: 170,
-              child: DropdownButton<String?>(
+              child: DropdownButton<HijriahMonth?>(
                 isExpanded: true,
                 value: c.selectedBulanHijriah.value,
                 hint: const Text('Bulan Hijriah'),
                 items: [
-                  const DropdownMenuItem<String?>(
+                  const DropdownMenuItem<HijriahMonth?>(
                     value: null,
                     child: Text('All'),
                   ),
                   ...months.map(
-                    (m) => DropdownMenuItem<String?>(value: m, child: Text(m)),
+                    (m) => DropdownMenuItem<HijriahMonth?>(
+                      value: m,
+                      child: Text(m.asString),
+                    ),
                   ),
                 ],
                 onChanged: (v) => c.selectedBulanHijriah.value = v,
