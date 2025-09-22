@@ -1,0 +1,250 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+
+import '../../shared/enums/instansi.dart';
+import '../../data/models/renja.dart';
+import '../../shared/formatters/rupiah_input_formatter.dart';
+import 'renja_controller.dart';
+
+class RenjaFormPage extends StatefulWidget {
+  const RenjaFormPage({super.key, this.existing});
+  final Renja? existing;
+
+  @override
+  State<RenjaFormPage> createState() => _RenjaFormPageState();
+}
+
+class _RenjaFormPageState extends State<RenjaFormPage> {
+  final _formKey = GlobalKey<FormState>();
+
+  final _dateCtrl = TextEditingController();
+  final _bulanHijriahCtrl = TextEditingController();
+  final _tahunHijriahCtrl = TextEditingController();
+  final _dayCtrl = TextEditingController();
+  final _timeCtrl = TextEditingController();
+  final _kegiatanCtrl = TextEditingController();
+  final _titikCtrl = TextEditingController();
+  final _picCtrl = TextEditingController();
+  final _sasaranCtrl = TextEditingController();
+  final _targetCtrl = TextEditingController();
+  final _tujuanCtrl = TextEditingController();
+  final _volumeCtrl = TextEditingController();
+  final _costCtrl = TextEditingController();
+  Instansi _instansi = Instansi.EKL;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.existing;
+    if (e != null) {
+      _dateCtrl.text = e.date;
+      _bulanHijriahCtrl.text = e.bulanHijriah;
+      _tahunHijriahCtrl.text = e.tahunHijriah.toString();
+      _dayCtrl.text = e.day.toString();
+      _timeCtrl.text = e.time;
+      _kegiatanCtrl.text = e.kegiatanDesc;
+      _titikCtrl.text = e.titikDesc;
+      _picCtrl.text = e.pic;
+      _sasaranCtrl.text = e.sasaran;
+      _targetCtrl.text = e.target;
+      _tujuanCtrl.text = e.tujuan;
+      _volumeCtrl.text = e.volume.toString();
+      _costCtrl.text = NumberFormat.currency(
+        locale: 'id_ID',
+        symbol: 'Rp ',
+        decimalDigits: 0,
+      ).format(e.cost);
+      _instansi = e.instansi;
+    }
+  }
+
+  @override
+  void dispose() {
+    _dateCtrl.dispose();
+    _bulanHijriahCtrl.dispose();
+    _tahunHijriahCtrl.dispose();
+    _dayCtrl.dispose();
+    _timeCtrl.dispose();
+    _kegiatanCtrl.dispose();
+    _titikCtrl.dispose();
+    _picCtrl.dispose();
+    _sasaranCtrl.dispose();
+    _targetCtrl.dispose();
+    _tujuanCtrl.dispose();
+    _volumeCtrl.dispose();
+    _costCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = Get.find<RenjaController>();
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.existing == null ? 'Add Renja' : 'Edit Renja'),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              _text(_kegiatanCtrl, label: 'Kegiatan (desc)', required: true),
+              _text(
+                _dateCtrl,
+                label: 'Date (YYYY-MM-DD)',
+                required: true,
+                onTap: _pickDate,
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: _text(
+                      _bulanHijriahCtrl,
+                      label: 'Bulan Hijriah (teks)',
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _number(_tahunHijriahCtrl, label: 'Tahun Hijriah'),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(child: _number(_dayCtrl, label: 'Day (1-31)')),
+                ],
+              ),
+              _text(_timeCtrl, label: 'Time (HH:mm)', onTap: _pickTime),
+              _text(_titikCtrl, label: 'Titik (desc)'),
+              _text(_picCtrl, label: 'PIC'),
+              _text(_sasaranCtrl, label: 'Sasaran'),
+              _text(_targetCtrl, label: 'Target'),
+              _text(_tujuanCtrl, label: 'Tujuan'),
+              _number(_volumeCtrl, label: 'Volume'),
+              _dropdownInstansi(),
+              TextFormField(
+                controller: _costCtrl,
+                keyboardType: TextInputType.number,
+                inputFormatters: [RupiahInputFormatter()],
+                decoration: const InputDecoration(labelText: 'Cost (Rupiah)'),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () async {
+                  if (!_formKey.currentState!.validate()) return;
+                  if (widget.existing == null) {
+                    await c.create(
+                      date: _dateCtrl.text.trim(),
+                      bulanHijriah: _bulanHijriahCtrl.text.trim(),
+                      tahunHijriah:
+                          int.tryParse(_tahunHijriahCtrl.text.trim()) ?? 0,
+                      day: int.tryParse(_dayCtrl.text.trim()) ?? 1,
+                      time: _timeCtrl.text.trim(),
+                      kegiatanDesc: _kegiatanCtrl.text.trim(),
+                      titikDesc: _titikCtrl.text.trim(),
+                      pic: _picCtrl.text.trim(),
+                      sasaran: _sasaranCtrl.text.trim(),
+                      target: _targetCtrl.text.trim(),
+                      tujuan: _tujuanCtrl.text.trim(),
+                      volume: double.tryParse(_volumeCtrl.text.trim()) ?? 0,
+                      instansi: _instansi,
+                      cost: RupiahInputFormatter.parseToInt(_costCtrl.text),
+                    );
+                  } else {
+                    final e = widget.existing!;
+                    await c.updateItem(
+                      e.copyWith(
+                        date: _dateCtrl.text.trim(),
+                        bulanHijriah: _bulanHijriahCtrl.text.trim().isEmpty
+                            ? e.bulanHijriah
+                            : _bulanHijriahCtrl.text.trim(),
+                        tahunHijriah:
+                            int.tryParse(_tahunHijriahCtrl.text.trim()) ??
+                            e.tahunHijriah,
+                        day: int.tryParse(_dayCtrl.text.trim()) ?? e.day,
+                        time: _timeCtrl.text.trim(),
+                        kegiatanDesc: _kegiatanCtrl.text.trim(),
+                        titikDesc: _titikCtrl.text.trim(),
+                        pic: _picCtrl.text.trim(),
+                        sasaran: _sasaranCtrl.text.trim(),
+                        target: _targetCtrl.text.trim(),
+                        tujuan: _tujuanCtrl.text.trim(),
+                        volume:
+                            double.tryParse(_volumeCtrl.text.trim()) ??
+                            e.volume,
+                        instansi: _instansi,
+                        cost: RupiahInputFormatter.parseToInt(_costCtrl.text),
+                      ),
+                    );
+                  }
+                  if (mounted) Get.back();
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _dropdownInstansi() {
+    return DropdownButtonFormField<Instansi>(
+      value: _instansi,
+      decoration: const InputDecoration(labelText: 'Instansi'),
+      items: Instansi.values
+          .map((e) => DropdownMenuItem(value: e, child: Text(e.asString)))
+          .toList(),
+      onChanged: (v) => setState(() => _instansi = v ?? Instansi.EKL),
+    );
+  }
+
+  Widget _text(
+    TextEditingController c, {
+    required String label,
+    bool required = false,
+    VoidCallback? onTap,
+  }) {
+    return TextFormField(
+      controller: c,
+      decoration: InputDecoration(labelText: label),
+      readOnly: onTap != null,
+      onTap: onTap,
+      validator: required
+          ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+          : null,
+    );
+  }
+
+  Widget _number(TextEditingController c, {required String label}) {
+    return TextFormField(
+      controller: c,
+      keyboardType: TextInputType.number,
+      decoration: InputDecoration(labelText: label),
+    );
+  }
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: DateTime(now.year - 5),
+      lastDate: DateTime(now.year + 5),
+    );
+    if (picked != null) {
+      _dateCtrl.text = DateFormat('yyyy-MM-dd').format(picked);
+    }
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (picked != null) {
+      final hh = picked.hour.toString().padLeft(2, '0');
+      final mm = picked.minute.toString().padLeft(2, '0');
+      _timeCtrl.text = '$hh:$mm';
+    }
+  }
+}
