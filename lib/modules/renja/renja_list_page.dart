@@ -7,6 +7,8 @@ import '../../shared/enums/hijriah_month.dart';
 import 'renja_controller.dart';
 import 'renja_form_page.dart';
 
+import '../../shared/controllers/settings_controller.dart';
+
 class RenjaListPage extends StatelessWidget {
   const RenjaListPage({super.key});
 
@@ -18,6 +20,16 @@ class RenjaListPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Renja Management'),
         actions: [
+          IconButton(
+            tooltip: 'A-',
+            icon: const Icon(Icons.text_decrease),
+            onPressed: () => Get.find<SettingsController>().dec(),
+          ),
+          IconButton(
+            tooltip: 'A+',
+            icon: const Icon(Icons.text_increase),
+            onPressed: () => Get.find<SettingsController>().inc(),
+          ),
           Obx(() {
             final isCal = c.calendarMode.value;
             return IconButton(
