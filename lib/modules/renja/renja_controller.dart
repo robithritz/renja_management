@@ -17,11 +17,13 @@ class RenjaController extends GetxController {
   final selectedInstansi = Rxn<Instansi>();
   final selectedTahunHijriah = Rxn<int>();
   final selectedBulanHijriah = Rxn<HijriahMonth>();
+  final selectedTergelar =
+      Rxn<bool>(); // null = semua, true/false = filter status
 
   final calendarMode = false.obs;
   final currentMonth = DateTime(DateTime.now().year, DateTime.now().month).obs;
 
-  // Derived list with filters applied (instansi, tahun hijriah, bulan hijriah)
+  // Derived list with filters applied (instansi, tahun hijriah, bulan hijriah, status)
   List<Renja> get filteredItems {
     Iterable<Renja> list = items;
 
@@ -36,6 +38,10 @@ class RenjaController extends GetxController {
     final bln = selectedBulanHijriah.value;
     if (bln != null) {
       list = list.where((r) => r.bulanHijriah == bln);
+    }
+    final st = selectedTergelar.value;
+    if (st != null) {
+      list = list.where((r) => r.isTergelar == st);
     }
 
     return list.toList();

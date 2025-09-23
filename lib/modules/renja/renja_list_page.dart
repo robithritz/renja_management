@@ -61,6 +61,152 @@ class RenjaListPage extends StatelessWidget {
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
+                              if (r.isTergelar != null)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  margin: const EdgeInsets.only(right: 8),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        (r.isTergelar == true
+                                                ? Colors.green
+                                                : Colors.red)
+                                            .withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color:
+                                          (r.isTergelar == true
+                                                  ? Colors.green
+                                                  : Colors.red)
+                                              .withOpacity(0.5),
+                                    ),
+                                  ),
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 220,
+                                    ),
+                                    child: Text(
+                                      r.isTergelar == true
+                                          ? 'Tergelar'
+                                          : (() {
+                                              final rs =
+                                                  r.reasonTidakTergelar
+                                                      ?.trim() ??
+                                                  '';
+                                              return rs.isNotEmpty
+                                                  ? 'Tidak tergelar — $rs'
+                                                  : 'Tidak tergelar';
+                                            })(),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: r.isTergelar == true
+                                            ? Colors.green.shade800
+                                            : Colors.red.shade800,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+
+                              if ((() {
+                                if (r.isTergelar != null) return false;
+                                try {
+                                  final t = (r.time).trim();
+                                  if (t.isNotEmpty) {
+                                    final dt = DateFormat(
+                                      'yyyy-MM-dd HH:mm',
+                                    ).parse('${r.date} $t');
+                                    return dt.isBefore(DateTime.now());
+                                  } else {
+                                    final d = DateFormat(
+                                      'yyyy-MM-dd',
+                                    ).parse(r.date);
+                                    final endOfDay = DateTime(
+                                      d.year,
+                                      d.month,
+                                      d.day,
+                                      23,
+                                      59,
+                                      59,
+                                    );
+                                    return endOfDay.isBefore(DateTime.now());
+                                  }
+                                } catch (_) {
+                                  try {
+                                    final d = DateFormat(
+                                      'yyyy-MM-dd',
+                                    ).parse(r.date);
+                                    final endOfDay = DateTime(
+                                      d.year,
+                                      d.month,
+                                      d.day,
+                                      23,
+                                      59,
+                                      59,
+                                    );
+                                    return endOfDay.isBefore(DateTime.now());
+                                  } catch (_) {
+                                    return false;
+                                  }
+                                }
+                              })())
+                                IconButton(
+                                  tooltip: 'Belum ditandai: Apakah tergelar?',
+                                  icon: const Icon(
+                                    Icons.warning_amber,
+                                    color: Colors.orange,
+                                  ),
+                                  onPressed: () async {
+                                    final res = await Get.dialog<bool?>(
+                                      AlertDialog(
+                                        title: const Text('Apakah Tergelar?'),
+                                        content: const Text(
+                                          'Jadwal ini sudah terlewat. Apakah kegiatan tergelar?',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Get.back(result: null),
+                                            child: const Text('Batal'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () =>
+                                                Get.back(result: false),
+                                            child: const Text('Tidak'),
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () =>
+                                                Get.back(result: true),
+                                            child: const Text('Ya'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                    if (res == true) {
+                                      await c.updateItem(
+                                        r.copyWith(
+                                          isTergelar: true,
+                                          reasonTidakTergelar: null,
+                                        ),
+                                      );
+                                    } else if (res == false) {
+                                      final reason = await Get.dialog<String?>(
+                                        const _ReasonDialog(),
+                                      );
+                                      if (reason != null &&
+                                          reason.trim().isNotEmpty) {
+                                        await c.updateItem(
+                                          r.copyWith(
+                                            isTergelar: false,
+                                            reasonTidakTergelar: reason.trim(),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                                ),
                               IconButton(
                                 icon: const Icon(Icons.edit),
                                 onPressed: () async {
@@ -352,66 +498,172 @@ class _FilterBar extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             const Text('Filter:'),
-            SizedBox(
-              width: 160,
-              child: DropdownButton<Instansi?>(
-                isExpanded: true,
-                value: c.selectedInstansi.value,
-                hint: const Text('Instansi'),
-                items: [
-                  const DropdownMenuItem<Instansi?>(
-                    value: null,
-                    child: Text('All'),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Instansi',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
                   ),
-                  ...Instansi.values.map(
-                    (e) => DropdownMenuItem<Instansi?>(
-                      value: e,
-                      child: Text(e.asString),
-                    ),
+                ),
+                SizedBox(
+                  width: 160,
+                  child: DropdownButton<Instansi?>(
+                    isExpanded: true,
+                    value: c.selectedInstansi.value,
+                    hint: const Text('Instansi'),
+                    items: [
+                      const DropdownMenuItem<Instansi?>(
+                        value: null,
+                        child: Text('All'),
+                      ),
+                      ...Instansi.values.map(
+                        (e) => DropdownMenuItem<Instansi?>(
+                          value: e,
+                          child: Text(e.asString),
+                        ),
+                      ),
+                    ],
+                    onChanged: (v) => c.selectedInstansi.value = v,
                   ),
-                ],
-                onChanged: (v) => c.selectedInstansi.value = v,
-              ),
+                ),
+              ],
             ),
-            SizedBox(
-              width: 150,
-              child: DropdownButton<int?>(
-                isExpanded: true,
-                value: c.selectedTahunHijriah.value,
-                hint: const Text('Tahun Hijriah'),
-                items: [
-                  const DropdownMenuItem<int?>(value: null, child: Text('All')),
-                  ...years.map(
-                    (y) => DropdownMenuItem<int?>(value: y, child: Text('$y')),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tahun Hijriah',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
                   ),
-                ],
-                onChanged: (v) => c.selectedTahunHijriah.value = v,
-              ),
+                ),
+                SizedBox(
+                  width: 150,
+                  child: DropdownButton<int?>(
+                    isExpanded: true,
+                    value: c.selectedTahunHijriah.value,
+                    hint: const Text('Tahun Hijriah'),
+                    items: [
+                      const DropdownMenuItem<int?>(
+                        value: null,
+                        child: Text('All'),
+                      ),
+                      ...years.map(
+                        (y) =>
+                            DropdownMenuItem<int?>(value: y, child: Text('$y')),
+                      ),
+                    ],
+                    onChanged: (v) => c.selectedTahunHijriah.value = v,
+                  ),
+                ),
+              ],
             ),
-            SizedBox(
-              width: 170,
-              child: DropdownButton<HijriahMonth?>(
-                isExpanded: true,
-                value: c.selectedBulanHijriah.value,
-                hint: const Text('Bulan Hijriah'),
-                items: [
-                  const DropdownMenuItem<HijriahMonth?>(
-                    value: null,
-                    child: Text('All'),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Bulan Hijriah',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
                   ),
-                  ...months.map(
-                    (m) => DropdownMenuItem<HijriahMonth?>(
-                      value: m,
-                      child: Text(m.asString),
-                    ),
+                ),
+                SizedBox(
+                  width: 170,
+                  child: DropdownButton<HijriahMonth?>(
+                    isExpanded: true,
+                    value: c.selectedBulanHijriah.value,
+                    hint: const Text('Bulan Hijriah'),
+                    items: [
+                      const DropdownMenuItem<HijriahMonth?>(
+                        value: null,
+                        child: Text('All'),
+                      ),
+                      ...months.map(
+                        (m) => DropdownMenuItem<HijriahMonth?>(
+                          value: m,
+                          child: Text(m.asString),
+                        ),
+                      ),
+                    ],
+                    onChanged: (v) => c.selectedBulanHijriah.value = v,
                   ),
-                ],
-                onChanged: (v) => c.selectedBulanHijriah.value = v,
-              ),
+                ),
+              ],
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Status',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                SizedBox(
+                  width: 150,
+                  child: DropdownButton<bool?>(
+                    isExpanded: true,
+                    value: c.selectedTergelar.value,
+                    hint: const Text('Status'),
+                    items: const [
+                      DropdownMenuItem<bool?>(value: null, child: Text('All')),
+                      DropdownMenuItem<bool?>(
+                        value: true,
+                        child: Text('Tergelar'),
+                      ),
+                      DropdownMenuItem<bool?>(
+                        value: false,
+                        child: Text('Tidak tergelar'),
+                      ),
+                    ],
+                    onChanged: (v) => c.selectedTergelar.value = v,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       );
     });
+  }
+}
+
+class _ReasonDialog extends StatelessWidget {
+  const _ReasonDialog({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final ctrl = TextEditingController();
+    return AlertDialog(
+      title: const Text('Alasan tidak tergelar'),
+      content: TextField(
+        controller: ctrl,
+        maxLines: 3,
+        decoration: const InputDecoration(
+          hintText: 'Tuliskan alasan... (wajib)',
+          border: OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Get.back(result: null),
+          child: const Text('Batal'),
+        ),
+        ElevatedButton(
+          onPressed: () => Get.back(result: ctrl.text.trim()),
+          child: const Text('Simpan'),
+        ),
+      ],
+    );
   }
 }

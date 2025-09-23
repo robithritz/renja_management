@@ -17,6 +17,8 @@ class Renja {
   final double volume;
   final Instansi instansi;
   final int cost; // store in smallest currency unit (e.g., rupiah)
+  final bool? isTergelar; // null = belum ditandai, true/false = status
+  final String? reasonTidakTergelar; // required when isTergelar == false
   final String createdAt; // ISO
   final String updatedAt; // ISO
 
@@ -36,6 +38,8 @@ class Renja {
     required this.volume,
     required this.instansi,
     required this.cost,
+    this.isTergelar,
+    this.reasonTidakTergelar,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -56,6 +60,8 @@ class Renja {
     double? volume,
     Instansi? instansi,
     int? cost,
+    bool? isTergelar,
+    String? reasonTidakTergelar,
     String? createdAt,
     String? updatedAt,
   }) => Renja(
@@ -74,11 +80,14 @@ class Renja {
     volume: volume ?? this.volume,
     instansi: instansi ?? this.instansi,
     cost: cost ?? this.cost,
+    isTergelar: isTergelar ?? this.isTergelar,
+    reasonTidakTergelar: reasonTidakTergelar ?? this.reasonTidakTergelar,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
 
   factory Renja.fromMap(Map<String, dynamic> map) {
+    final int? it = map['is_tergelar'] as int?;
     return Renja(
       uuid: map['uuid'] as String,
       date: map['date'] as String,
@@ -95,6 +104,8 @@ class Renja {
       volume: (map['volume'] as num).toDouble(),
       instansi: InstansiX.fromString(map['instansi'] as String),
       cost: map['cost'] as int,
+      isTergelar: it == null ? null : (it == 1),
+      reasonTidakTergelar: map['reason_tidak_tergelar'] as String?,
       createdAt: map['created_at'] as String,
       updatedAt: map['updated_at'] as String,
     );
@@ -116,6 +127,8 @@ class Renja {
     'volume': volume,
     'instansi': instansi.asString,
     'cost': cost,
+    'is_tergelar': isTergelar == null ? null : (isTergelar! ? 1 : 0),
+    'reason_tidak_tergelar': reasonTidakTergelar,
     'created_at': createdAt,
     'updated_at': updatedAt,
   };

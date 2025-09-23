@@ -25,6 +25,8 @@ class AppDatabase {
     volume REAL,
     instansi TEXT,
     cost INTEGER,
+    is_tergelar INTEGER,
+    reason_tidak_tergelar TEXT,
     created_at TEXT,
     updated_at TEXT
   );
@@ -43,14 +45,26 @@ class AppDatabase {
     final path = p.join(dbPath, 'renja_management.db');
     return openDatabase(
       path,
-      version: 3,
+      version: 5,
       onCreate: (db, version) async {
         await db.execute(_createTableRenja);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
-        // Early reset: drop and recreate table to apply schema changes
-        await db.execute('DROP TABLE IF EXISTS $tableRenja');
-        await db.execute(_createTableRenja);
+        // Safe migrations to preserve data
+        if (oldVersion < 4) {
+          try {
+            await db.execute(
+              'ALTER TABLE $tableRenja ADD COLUMN is_tergelar INTEGER',
+            );
+          } catch (_) {}
+        }
+        if (oldVersion < 5) {
+          try {
+            await db.execute(
+              'ALTER TABLE $tableRenja ADD COLUMN reason_tidak_tergelar TEXT',
+            );
+          } catch (_) {}
+        }
       },
     );
   }
