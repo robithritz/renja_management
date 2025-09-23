@@ -62,52 +62,59 @@ class RenjaListPage extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               if (r.isTergelar != null)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  margin: const EdgeInsets.only(right: 8),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        (r.isTergelar == true
-                                                ? Colors.green
-                                                : Colors.red)
-                                            .withOpacity(0.12),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color:
-                                          (r.isTergelar == true
-                                                  ? Colors.green
-                                                  : Colors.red)
-                                              .withOpacity(0.5),
-                                    ),
-                                  ),
-                                  child: ConstrainedBox(
-                                    constraints: const BoxConstraints(
-                                      maxWidth: 220,
-                                    ),
-                                    child: Text(
-                                      r.isTergelar == true
-                                          ? 'Tergelar'
-                                          : (() {
-                                              final rs =
-                                                  r.reasonTidakTergelar
-                                                      ?.trim() ??
-                                                  '';
-                                              return rs.isNotEmpty
-                                                  ? 'Tidak tergelar — $rs'
-                                                  : 'Tidak tergelar';
-                                            })(),
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: r.isTergelar == true
-                                            ? Colors.green.shade800
-                                            : Colors.red.shade800,
+                                Builder(
+                                  builder: (_) {
+                                    final msg = r.isTergelar == false
+                                        ? (() {
+                                            final rs =
+                                                r.reasonTidakTergelar?.trim() ??
+                                                '';
+                                            return rs.isNotEmpty
+                                                ? 'Tidak tergelar — $rs'
+                                                : 'Tidak tergelar';
+                                          })()
+                                        : 'Tergelar';
+                                    final badge = Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
                                       ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
+                                      margin: const EdgeInsets.only(right: 8),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            (r.isTergelar == true
+                                                    ? Colors.green
+                                                    : Colors.red)
+                                                .withOpacity(0.12),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color:
+                                              (r.isTergelar == true
+                                                      ? Colors.green
+                                                      : Colors.red)
+                                                  .withOpacity(0.5),
+                                        ),
+                                      ),
+                                      child: ConstrainedBox(
+                                        constraints: const BoxConstraints(
+                                          maxWidth: 220,
+                                        ),
+                                        child: Text(
+                                          msg,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: r.isTergelar == true
+                                                ? Colors.green.shade800
+                                                : Colors.red.shade800,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    );
+                                    return r.isTergelar == false
+                                        ? Tooltip(message: msg, child: badge)
+                                        : badge;
+                                  },
                                 ),
 
                               if ((() {
@@ -325,136 +332,198 @@ class _CalendarView extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 7,
-                childAspectRatio: 1,
-              ),
-              itemCount: leading + days,
-              itemBuilder: (context, index) {
-                if (index < leading) return const SizedBox.shrink();
-                final day = index - leading + 1;
-                final date = DateTime(month.year, month.month, day);
-                final iso = isoFmt.format(date);
-                final items = c.filteredItems
-                    .where((r) => r.date == iso)
-                    .toList();
-                final has = items.isNotEmpty;
-                return InkWell(
-                  onTap: () {
-                    if (items.isEmpty) return;
-                    showModalBottomSheet(
-                      context: context,
-                      builder: (_) => SafeArea(
-                        child: ListView.separated(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: items.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
-                          itemBuilder: (_, i) {
-                            final r = items[i];
-                            return ListTile(
-                              title: Text(r.kegiatanDesc),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('${r.time} • ${r.instansi.asString}'),
-                                  Text(
-                                    'Hijriah: ${r.bulanHijriah.asString} ${r.tahunHijriah}',
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                const columns = 7;
+                final total = leading + days;
+                final rows = (total / columns).ceil().clamp(1, 6);
+                final cellWidth = constraints.maxWidth / columns;
+                final cellHeight = constraints.maxHeight / rows;
+                final aspect = cellWidth / cellHeight;
+
+                return GridView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    childAspectRatio: aspect,
+                  ),
+                  itemCount: leading + days,
+                  itemBuilder: (context, index) {
+                    if (index < leading) return const SizedBox.shrink();
+                    final day = index - leading + 1;
+                    final date = DateTime(month.year, month.month, day);
+                    final iso = isoFmt.format(date);
+                    final items = c.filteredItems
+                        .where((r) => r.date == iso)
+                        .toList();
+                    final has = items.isNotEmpty;
+                    return InkWell(
+                      onTap: () {
+                        if (items.isEmpty) return;
+                        showModalBottomSheet(
+                          context: context,
+                          builder: (_) => SafeArea(
+                            child: ListView.separated(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: items.length,
+                              separatorBuilder: (_, __) =>
+                                  const Divider(height: 1),
+                              itemBuilder: (_, i) {
+                                final r = items[i];
+                                return ListTile(
+                                  title: Text(r.kegiatanDesc),
+                                  subtitle: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '${r.time} • ${r.instansi.asString}',
+                                      ),
+                                      Text(
+                                        'Hijriah: ${r.bulanHijriah.asString} ${r.tahunHijriah}',
+                                      ),
+                                      if (r.sasaran.isNotEmpty)
+                                        Text('Sasaran: ${r.sasaran}'),
+                                      if (r.tujuan.isNotEmpty)
+                                        Text('Tujuan: ${r.tujuan}'),
+                                      if (r.target.isNotEmpty)
+                                        Text('Target: ${r.target}'),
+                                      if (r.pic.isNotEmpty)
+                                        Text('PIC: ${r.pic}'),
+                                      if (r.titikDesc.isNotEmpty)
+                                        Text('Titik: ${r.titikDesc}'),
+                                      if (r.isTergelar == false)
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            top: 6,
+                                          ),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red.withOpacity(
+                                                0.12,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: Colors.red.withOpacity(
+                                                  0.5,
+                                                ),
+                                              ),
+                                            ),
+                                            child: Text(
+                                              (() {
+                                                final rs =
+                                                    r.reasonTidakTergelar
+                                                        ?.trim() ??
+                                                    '';
+                                                return rs.isNotEmpty
+                                                    ? 'Tidak tergelar — $rs'
+                                                    : 'Tidak tergelar';
+                                              })(),
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.red.shade800,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ),
-                                  if (r.sasaran.isNotEmpty)
-                                    Text('Sasaran: ${r.sasaran}'),
-                                  if (r.tujuan.isNotEmpty)
-                                    Text('Tujuan: ${r.tujuan}'),
-                                  if (r.target.isNotEmpty)
-                                    Text('Target: ${r.target}'),
-                                  if (r.pic.isNotEmpty) Text('PIC: ${r.pic}'),
-                                  if (r.titikDesc.isNotEmpty)
-                                    Text('Titik: ${r.titikDesc}'),
-                                ],
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: has
+                              ? Colors.teal.withValues(alpha: 0.08)
+                              : null,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Stack(
+                          children: [
+                            Positioned(top: 6, right: 6, child: Text('$day')),
+                            Positioned.fill(
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                  top: 22,
+                                  left: 4,
+                                  right: 4,
+                                  bottom: 14,
+                                ),
+                                child: has
+                                    ? Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          ...items
+                                              .take(3)
+                                              .map(
+                                                (e) => Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                        bottom: 2,
+                                                      ),
+                                                  child: Text(
+                                                    e.kegiatanDesc,
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      color: _instansiColor(
+                                                        e.instansi,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                          if (items.length > 3)
+                                            const Text(
+                                              '...',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                        ],
+                                      )
+                                    : const SizedBox.shrink(),
                               ),
-                            );
-                          },
+                            ),
+                            if (has)
+                              Positioned(
+                                bottom: 6,
+                                left: 0,
+                                right: 0,
+                                child: Center(
+                                  child: Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: const BoxDecoration(
+                                      color: Colors.teal,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     );
                   },
-                  child: Container(
-                    margin: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: has ? Colors.teal.withValues(alpha: 0.08) : null,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: Stack(
-                      children: [
-                        Positioned(top: 6, right: 6, child: Text('$day')),
-                        // Show up to three kegiatan labels, color-coded by instansi
-                        Positioned.fill(
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                              top: 22,
-                              left: 4,
-                              right: 4,
-                              bottom: 14,
-                            ),
-                            child: has
-                                ? Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      ...items
-                                          .take(3)
-                                          .map(
-                                            (e) => Padding(
-                                              padding: const EdgeInsets.only(
-                                                bottom: 2,
-                                              ),
-                                              child: Text(
-                                                e.kegiatanDesc,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(
-                                                  fontSize: 10,
-                                                  color: _instansiColor(
-                                                    e.instansi,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                      if (items.length > 3)
-                                        const Text(
-                                          '...',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                    ],
-                                  )
-                                : const SizedBox.shrink(),
-                          ),
-                        ),
-                        if (has)
-                          Positioned(
-                            bottom: 6,
-                            left: 0,
-                            right: 0,
-                            child: Center(
-                              child: Container(
-                                width: 6,
-                                height: 6,
-                                decoration: const BoxDecoration(
-                                  color: Colors.teal,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
                 );
               },
             ),
