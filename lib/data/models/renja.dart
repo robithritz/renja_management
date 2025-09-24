@@ -1,5 +1,6 @@
 import '../../shared/enums/instansi.dart';
 import '../../shared/enums/hijriah_month.dart';
+import '../../shared/enums/shaf.dart';
 
 class Renja {
   final String uuid;
@@ -19,6 +20,7 @@ class Renja {
   final int cost; // store in smallest currency unit (e.g., rupiah)
   final bool? isTergelar; // null = belum ditandai, true/false = status
   final String? reasonTidakTergelar; // required when isTergelar == false
+  final Shaf? shaf; // AC/CB, nullable for existing rows
   final String createdAt; // ISO
   final String updatedAt; // ISO
 
@@ -40,6 +42,7 @@ class Renja {
     required this.cost,
     this.isTergelar,
     this.reasonTidakTergelar,
+    this.shaf,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -62,6 +65,7 @@ class Renja {
     int? cost,
     bool? isTergelar,
     String? reasonTidakTergelar,
+    Shaf? shaf,
     String? createdAt,
     String? updatedAt,
   }) => Renja(
@@ -82,12 +86,14 @@ class Renja {
     cost: cost ?? this.cost,
     isTergelar: isTergelar ?? this.isTergelar,
     reasonTidakTergelar: reasonTidakTergelar ?? this.reasonTidakTergelar,
+    shaf: shaf ?? this.shaf,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
 
   factory Renja.fromMap(Map<String, dynamic> map) {
     final int? it = map['is_tergelar'] as int?;
+    final String? sh = map['shaf'] as String?;
     return Renja(
       uuid: map['uuid'] as String,
       date: map['date'] as String,
@@ -106,6 +112,7 @@ class Renja {
       cost: map['cost'] as int,
       isTergelar: it == null ? null : (it == 1),
       reasonTidakTergelar: map['reason_tidak_tergelar'] as String?,
+      shaf: sh != null ? ShafX.fromString(sh) : null,
       createdAt: map['created_at'] as String,
       updatedAt: map['updated_at'] as String,
     );
@@ -129,6 +136,7 @@ class Renja {
     'cost': cost,
     'is_tergelar': isTergelar == null ? null : (isTergelar! ? 1 : 0),
     'reason_tidak_tergelar': reasonTidakTergelar,
+    'shaf': shaf?.asString,
     'created_at': createdAt,
     'updated_at': updatedAt,
   };

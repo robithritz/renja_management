@@ -6,6 +6,12 @@ import '../../shared/enums/instansi.dart';
 import '../../shared/enums/hijriah_month.dart';
 import 'renja_controller.dart';
 import 'renja_form_page.dart';
+import 'package:syncfusion_flutter_xlsio/xlsio.dart' as xls;
+import 'package:file_selector/file_selector.dart';
+import '../../data/models/renja.dart';
+import 'dart:typed_data';
+
+import 'package:hijriyah_indonesia/hijriyah_indonesia.dart';
 
 import '../../shared/controllers/settings_controller.dart';
 
@@ -20,6 +26,16 @@ class RenjaListPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Renja Management'),
         actions: [
+          IconButton(
+            tooltip: 'Export to Excel',
+            icon: const Icon(Icons.download),
+            onPressed: () async => _exportExcel(
+              items: c.filteredItems,
+              bulan: c.selectedBulanHijriah.value,
+              tahun: c.selectedTahunHijriah.value,
+              instansiFilter: c.selectedInstansi.value,
+            ),
+          ),
           IconButton(
             tooltip: 'A-',
             icon: const Icon(Icons.text_decrease),
@@ -745,6 +761,166 @@ class _ReasonDialog extends StatelessWidget {
           child: const Text('Simpan'),
         ),
       ],
+    );
+  }
+}
+
+Future<void> _exportExcel({
+  required List<Renja> items,
+  HijriahMonth? bulan,
+  int? tahun,
+  Instansi? instansiFilter,
+}) async {
+  try {
+    final wb = xls.Workbook();
+    final ws = wb.worksheets[0];
+
+    // Title and subtitle
+    final shafSet = items.map((e) => e.shaf?.name).whereType<String>().toSet();
+    final shafLabel = shafSet.length == 1 ? shafSet.first : 'AC';
+    final monthText =
+        (bulan ?? (items.isNotEmpty ? items.first.bulanHijriah : null))
+            ?.asString ??
+        '';
+    final yearText =
+        (tahun ?? (items.isNotEmpty ? items.first.tahunHijriah : null))
+            ?.toString() ??
+        '';
+
+    ws.getRangeByName('A1:Q1').merge();
+    final titleRange = ws.getRangeByName('A1');
+    titleRange.setText('RENCANA KERJA $shafLabel');
+    final titleStyle = wb.styles.add('title');
+    titleStyle.bold = true;
+    titleStyle.fontSize = 18;
+    titleStyle.fontColor = '#1B5E20';
+    titleStyle.hAlign = xls.HAlignType.center;
+    ws.getRangeByName('A1:Q1').cellStyle = titleStyle;
+
+    ws.getRangeByName('A2:Q2').merge();
+    final subtitle = ws.getRangeByName('A2');
+    subtitle.setText('$monthText $yearText');
+    final subtitleStyle = wb.styles.add('subtitle');
+    subtitleStyle.bold = true;
+    subtitleStyle.fontSize = 14;
+    subtitleStyle.fontColor = '#1B5E20';
+    subtitleStyle.hAlign = xls.HAlignType.center;
+    ws.getRangeByName('A2:Q2').cellStyle = subtitleStyle;
+
+    // Optional: show current Instansi filter text at A3
+    if (instansiFilter != null) {
+      ws.getRangeByName('A3:Q3').merge();
+      ws.getRangeByName('A3').setText('DIVISI: ${instansiFilter.asString}');
+    }
+
+    // Start table header at row 5
+    const startRow = 5;
+    final headers = <String>[
+      'NO',
+      'HIJRIYAH',
+      'MASEHI',
+      'HARI',
+      'JAM',
+      'JENIS KEGIATAN',
+      'TITIK',
+      'P.JAWAB',
+      'SASARAN',
+      'TUJUAN',
+      'TARGET',
+      'VOLUME',
+      'INSTANSI',
+      'ANGGARAN',
+    ];
+
+    // Header row with color + enable AutoFilter
+    for (var i = 0; i < headers.length; i++) {
+      ws.getRangeByIndex(startRow, i + 1).setText(headers[i]);
+    }
+    final headerStyle = wb.styles.add('header');
+    headerStyle.backColor = '#009688';
+    headerStyle.fontColor = '#FFFFFF';
+    headerStyle.bold = true;
+    ws.getRangeByName('A$startRow:N$startRow').cellStyle =
+        headerStyle; // 14 cols -> N
+
+    // Data rows start at startRow + 1
+    for (var i = 0; i < items.length; i++) {
+      final r = items[i];
+      final row = startRow + 1 + i;
+
+      // Parse date and compute localized day + Hijriyah
+      DateTime? d;
+      try {
+        d = DateTime.parse(r.date).toLocal();
+      } catch (_) {
+        try {
+          d = DateFormat('yyyy-MM-dd').parse(r.date).toLocal();
+        } catch (_) {}
+      }
+      final hari = d != null ? DateFormat('EEEE', 'id_ID').format(d) : '';
+      final hijText = d != null
+          ? Hijriyah.fromDate(d, isPasaran: false).toFormat("dd MMMM yyyy")
+          : '${r.day} ${r.bulanHijriah.asString} ${r.tahunHijriah}';
+
+      // Columns mapping
+      ws.getRangeByIndex(row, 1).setNumber((i + 1).toDouble()); // NO
+      ws.getRangeByIndex(row, 2).setText(hijText); // HIJRIYAH (computed)
+      ws.getRangeByIndex(row, 3).setText(r.date); // MASEHI
+      ws.getRangeByIndex(row, 4).setText(hari); // HARI localized
+      ws.getRangeByIndex(row, 5).setText(r.time); // JAM
+      ws.getRangeByIndex(row, 6).setText(r.kegiatanDesc); // JENIS KEGIATAN
+      ws.getRangeByIndex(row, 7).setText(r.titikDesc); // TITIK
+      ws.getRangeByIndex(row, 8).setText(r.pic); // P.JAWAB
+      ws.getRangeByIndex(row, 9).setText(r.sasaran); // SASARAN
+      ws.getRangeByIndex(row, 10).setText(r.tujuan); // TUJUAN
+      ws.getRangeByIndex(row, 11).setText(r.target); // TARGET
+      ws.getRangeByIndex(row, 12).setNumber(r.volume); // VOLUME
+      ws.getRangeByIndex(row, 13).setText(r.instansi.asString); // INSTANSI
+      ws.getRangeByIndex(row, 14).setNumber(r.cost.toDouble()); // ANGGARAN
+    }
+
+    // Auto fit columns individually
+    for (var c = 1; c <= headers.length; c++) {
+      ws.autoFitColumn(c);
+    }
+
+    // Enable AutoFilter on header row
+    ws.autoFilters.filterRange = ws.getRangeByName('A$startRow:N$startRow');
+    // Freeze the title, subtitle, (optional) instansi row, and header row + columns A..F
+    ws.getRangeByName('G${startRow + 1}').freezePanes();
+
+    final bytes = wb.saveAsStream();
+    wb.dispose();
+
+    const fileName = 'renja_export.xlsx';
+    final result = await getSaveLocation(
+      suggestedName: fileName,
+      acceptedTypeGroups: const [
+        XTypeGroup(label: 'Excel Workbook', extensions: ['xlsx']),
+      ],
+    );
+    if (result == null) return;
+
+    final xfile = XFile.fromData(
+      Uint8List.fromList(bytes),
+      name: fileName,
+      mimeType:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    await xfile.saveTo(result.path);
+
+    Get.snackbar(
+      'Export selesai',
+      'File disimpan ke: ${result.path}',
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 4),
+    );
+  } catch (e) {
+    Get.snackbar(
+      'Export gagal',
+      e.toString(),
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 5),
     );
   }
 }

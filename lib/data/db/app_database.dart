@@ -27,6 +27,7 @@ class AppDatabase {
     cost INTEGER,
     is_tergelar INTEGER,
     reason_tidak_tergelar TEXT,
+    shaf TEXT,
     created_at TEXT,
     updated_at TEXT
   );
@@ -45,7 +46,7 @@ class AppDatabase {
     final path = p.join(dbPath, 'renja_management.db');
     return openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: (db, version) async {
         await db.execute(_createTableRenja);
       },
@@ -63,6 +64,11 @@ class AppDatabase {
             await db.execute(
               'ALTER TABLE $tableRenja ADD COLUMN reason_tidak_tergelar TEXT',
             );
+          } catch (_) {}
+        }
+        if (oldVersion < 6) {
+          try {
+            await db.execute('ALTER TABLE $tableRenja ADD COLUMN shaf TEXT');
           } catch (_) {}
         }
       },
