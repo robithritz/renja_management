@@ -7,6 +7,7 @@ class MonevSummary {
   final int tahunHijriah;
   final int latestWeekNumber; // The latest pekan inserted for this month/year
   final String? shafUuid; // Optional: if filtering by specific shaf
+  final String? shafName; // Optional: if filtering by specific shaf
 
   // Aggregated data from latest pekan
   final int activeMalPu;
@@ -28,11 +29,18 @@ class MonevSummary {
   // Total potential members (from Shaf)
   final int totalPu;
 
+  // Shaf class totals (from Shaf table)
+  final int totalClassA;
+  final int totalClassB;
+  final int totalClassC;
+  final int totalClassD;
+
   const MonevSummary({
     required this.bulanHijriah,
     required this.tahunHijriah,
     required this.latestWeekNumber,
     this.shafUuid,
+    this.shafName,
     required this.activeMalPu,
     required this.activeMalClassA,
     required this.activeMalClassB,
@@ -47,6 +55,10 @@ class MonevSummary {
     required this.totalNewMember,
     required this.totalKdpu,
     required this.totalPu,
+    required this.totalClassA,
+    required this.totalClassB,
+    required this.totalClassC,
+    required this.totalClassD,
   });
 
   /// Get total active MAL

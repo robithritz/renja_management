@@ -119,11 +119,19 @@ class MonevRepository {
       totalKdpu += monev.totalKdpu;
     }
 
-    // Get total PU from all shafs in the Shaf table
+    // Get total PU and class totals from all shafs in the Shaf table
     final allShafs = await _shafRepository.getAll();
     int totalPu = 0;
+    int totalClassA = 0;
+    int totalClassB = 0;
+    int totalClassC = 0;
+    int totalClassD = 0;
     for (final shaf in allShafs) {
       totalPu += shaf.totalPu;
+      totalClassA += shaf.totalClassA;
+      totalClassB += shaf.totalClassB;
+      totalClassC += shaf.totalClassC;
+      totalClassD += shaf.totalClassD;
     }
 
     // Use the first monev's month/year/week info
@@ -148,6 +156,10 @@ class MonevRepository {
       totalNewMember: totalNewMember,
       totalKdpu: totalKdpu,
       totalPu: totalPu,
+      totalClassA: totalClassA,
+      totalClassB: totalClassB,
+      totalClassC: totalClassC,
+      totalClassD: totalClassD,
     );
   }
 
@@ -172,15 +184,20 @@ class MonevRepository {
 
     final monev = Monev.fromMap(maps.first);
 
-    // Get total PU from Shaf
+    // Get total PU and class totals from Shaf
     final shaf = await _shafRepository.findById(shafUuid);
     final totalPu = shaf?.totalPu ?? 0;
+    final totalClassA = shaf?.totalClassA ?? 0;
+    final totalClassB = shaf?.totalClassB ?? 0;
+    final totalClassC = shaf?.totalClassC ?? 0;
+    final totalClassD = shaf?.totalClassD ?? 0;
 
     return MonevSummary(
       bulanHijriah: monev.bulanHijriah,
       tahunHijriah: monev.tahunHijriah,
       latestWeekNumber: monev.weekNumber,
       shafUuid: monev.shafUuid,
+      shafName: shaf?.rakitName,
       activeMalPu: monev.activeMalPu,
       activeMalClassA: monev.activeMalClassA,
       activeMalClassB: monev.activeMalClassB,
@@ -195,6 +212,10 @@ class MonevRepository {
       totalNewMember: monev.totalNewMember,
       totalKdpu: monev.totalKdpu,
       totalPu: totalPu,
+      totalClassA: totalClassA,
+      totalClassB: totalClassB,
+      totalClassC: totalClassC,
+      totalClassD: totalClassD,
     );
   }
 

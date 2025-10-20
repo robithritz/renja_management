@@ -1,7 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:share_plus/share_plus.dart';
 
+import '../../data/models/monev_summary.dart';
 import '../../data/repositories/monev_repository.dart';
 import '../../shared/enums/hijriah_month.dart';
 import 'monev_controller.dart';
@@ -20,7 +25,21 @@ class MonevSummaryPage extends StatelessWidget {
     final c = Get.find<MonevController>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Ringkasan Monev')),
+      appBar: AppBar(
+        title: const Text('Ringkasan Monev'),
+        actions: [
+          Obx(() {
+            final summary = c.currentSummary.value;
+            return IconButton(
+              icon: const Icon(Icons.share),
+              onPressed: summary != null
+                  ? () => _shareToWhatsApp(summary)
+                  : null,
+              tooltip: 'Bagikan ke WhatsApp',
+            );
+          }),
+        ],
+      ),
       body: Obx(() {
         if (c.availableMonthYears.isEmpty) {
           return const Center(child: Text('Belum ada data Monev'));
@@ -525,5 +544,125 @@ class MonevSummaryPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _shareToWhatsApp(MonevSummary summary) {
+    final text = _formatSummaryText(summary);
+
+    // On macOS, copy to clipboard instead of share
+    if (Platform.isMacOS) {
+      Clipboard.setData(ClipboardData(text: text));
+      Get.snackbar(
+        'Berhasil',
+        'Ringkasan disalin ke clipboard',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 2),
+      );
+    } else {
+      // On Android/iOS, use share dialog
+      Share.share(text);
+    }
+  }
+
+  String _formatSummaryText(MonevSummary summary) {
+    final mal = summary.totalActiveMal;
+    final bn = summary.totalActiveBn;
+    final newMember = summary.totalNewMember;
+    final kdpu = summary.totalKdpu;
+    final nominal = summary.nominalMal;
+    final bulan = summary.bulanHijriah.asString;
+    final tahun = summary.tahunHijriah;
+    final pekan = summary.latestWeekNumber;
+
+    final malPct = summary.totalPu > 0
+        ? (mal / summary.totalPu * 100).toStringAsFixed(1)
+        : '0.0';
+
+    final bnPct = summary.totalPu > 0
+        ? (bn / summary.totalPu * 100).toStringAsFixed(1)
+        : '0.0';
+
+    // Calculate class percentages for MAL
+    final malClassAPct = summary.totalClassA > 0
+        ? (summary.activeMalClassA / summary.totalClassA * 100).toStringAsFixed(
+            1,
+          )
+        : '0.0';
+    final malClassBPct = summary.totalClassB > 0
+        ? (summary.activeMalClassB / summary.totalClassB * 100).toStringAsFixed(
+            1,
+          )
+        : '0.0';
+    final malClassCPct = summary.totalClassC > 0
+        ? (summary.activeMalClassC / summary.totalClassC * 100).toStringAsFixed(
+            1,
+          )
+        : '0.0';
+    final malClassDPct = summary.totalClassD > 0
+        ? (summary.activeMalClassD / summary.totalClassD * 100).toStringAsFixed(
+            1,
+          )
+        : '0.0';
+
+    // Calculate class percentages for BN
+    final bnClassAPct = summary.totalClassA > 0
+        ? (summary.activeBnClassA / summary.totalClassA * 100).toStringAsFixed(
+            1,
+          )
+        : '0.0';
+    final bnClassBPct = summary.totalClassB > 0
+        ? (summary.activeBnClassB / summary.totalClassB * 100).toStringAsFixed(
+            1,
+          )
+        : '0.0';
+    final bnClassCPct = summary.totalClassC > 0
+        ? (summary.activeBnClassC / summary.totalClassC * 100).toStringAsFixed(
+            1,
+          )
+        : '0.0';
+    final bnClassDPct = summary.totalClassD > 0
+        ? (summary.activeBnClassD / summary.totalClassD * 100).toStringAsFixed(
+            1,
+          )
+        : '0.0';
+
+    // Get shaf name if single shaf is selected
+    final shafInfo = summary.shafUuid != null
+        ? '\n🏢 *Shaf:* ${summary.shafName}'
+        : '';
+
+    return '''
+📊 *RINGKASAN MONEV*
+
+📅 *Periode:* Pekan $pekan - $bulan $tahun$shafInfo
+
+👥 *Statistik Anggota:*
+
+*MAL (${summary.totalActiveMal}):*
+• Kelas A: ${summary.activeMalClassA}/${summary.totalClassA} ($malClassAPct%)
+• Kelas B: ${summary.activeMalClassB}/${summary.totalClassB} ($malClassBPct%)
+• Kelas C: ${summary.activeMalClassC}/${summary.totalClassC} ($malClassCPct%)
+• Kelas D: ${summary.activeMalClassD}/${summary.totalClassD} ($malClassDPct%)
+• PU: ${summary.activeMalPu}
+• Total: $mal ($malPct%)
+
+*BN (${summary.totalActiveBn}):*
+• Kelas A: ${summary.activeBnClassA}/${summary.totalClassA} ($bnClassAPct%)
+• Kelas B: ${summary.activeBnClassB}/${summary.totalClassB} ($bnClassBPct%)
+• Kelas C: ${summary.activeBnClassC}/${summary.totalClassC} ($bnClassCPct%)
+• Kelas D: ${summary.activeBnClassD}/${summary.totalClassD} ($bnClassDPct%)
+• PU: ${summary.activeBnPu}
+• Total: $bn ($bnPct%)
+
+📊 *Lainnya:*
+• Anggota Baru: $newMember
+• Total KDPU: $kdpu
+
+💰 *Nominal MAL:* Rp $nominal
+
+---
+Dibuat dari Aplikasi Renja Management
+'''
+        .trim();
   }
 }
