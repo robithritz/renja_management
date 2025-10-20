@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import '../../shared/enums/hijriah_month.dart';
 
 class Monev {
@@ -24,6 +23,10 @@ class Monev {
   final int totalNewMember;
   final int totalKdpu;
 
+  final String? narrationMal;
+  final String? narrationBn;
+  final String? narrationDkw;
+
   final String createdAt;
   final String updatedAt;
 
@@ -46,6 +49,9 @@ class Monev {
     required this.activeBnClassD,
     required this.totalNewMember,
     required this.totalKdpu,
+    this.narrationMal,
+    this.narrationBn,
+    this.narrationDkw,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -69,6 +75,9 @@ class Monev {
     int? activeBnClassD,
     int? totalNewMember,
     int? totalKdpu,
+    String? narrationMal,
+    String? narrationBn,
+    String? narrationDkw,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -91,6 +100,9 @@ class Monev {
       activeBnClassD: activeBnClassD ?? this.activeBnClassD,
       totalNewMember: totalNewMember ?? this.totalNewMember,
       totalKdpu: totalKdpu ?? this.totalKdpu,
+      narrationMal: narrationMal ?? this.narrationMal,
+      narrationBn: narrationBn ?? this.narrationBn,
+      narrationDkw: narrationDkw ?? this.narrationDkw,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -100,7 +112,9 @@ class Monev {
     return Monev(
       uuid: map['uuid'] as String,
       shafUuid: map['shaf_uuid'] as String?,
-      bulanHijriah: HijriahMonthX.fromDb((map['bulan_hijriah'] ?? '') as String),
+      bulanHijriah: HijriahMonthX.fromDb(
+        (map['bulan_hijriah'] ?? '') as String,
+      ),
       tahunHijriah: (map['tahun_hijriah'] as num? ?? 0).toInt(),
       weekNumber: (map['week_number'] as num? ?? 1).toInt(),
       activeMalPu: (map['active_mal_pu'] as num? ?? 0).toInt(),
@@ -116,6 +130,9 @@ class Monev {
       activeBnClassD: (map['active_bn_class_D'] as num? ?? 0).toInt(),
       totalNewMember: (map['total_new_member'] as num? ?? 0).toInt(),
       totalKdpu: (map['total_kdpu'] as num? ?? 0).toInt(),
+      narrationMal: map['narration_mal'] as String?,
+      narrationBn: map['narration_bn'] as String?,
+      narrationDkw: map['narration_dkw'] as String?,
       createdAt: (map['created_at'] ?? '') as String,
       updatedAt: (map['updated_at'] ?? '') as String,
     );
@@ -141,12 +158,15 @@ class Monev {
       'active_bn_class_D': activeBnClassD,
       'total_new_member': totalNewMember,
       'total_kdpu': totalKdpu,
+      'narration_mal': narrationMal,
+      'narration_bn': narrationBn,
+      'narration_dkw': narrationDkw,
       'created_at': createdAt,
       'updated_at': updatedAt,
     };
   }
 
   @override
-  String toString() => 'Monev(uuid: $uuid, week: $weekNumber, ${bulanHijriah.asString} $tahunHijriah)';
+  String toString() =>
+      'Monev(uuid: $uuid, week: $weekNumber, ${bulanHijriah.asString} $tahunHijriah)';
 }
-

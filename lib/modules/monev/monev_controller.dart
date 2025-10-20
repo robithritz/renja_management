@@ -147,6 +147,9 @@ class MonevController extends GetxController {
     required int activeBnClassD,
     required int totalNewMember,
     required int totalKdpu,
+    String? narrationMal,
+    String? narrationBn,
+    String? narrationDkw,
   }) async {
     final now = DateTime.now().toIso8601String();
     final e = Monev(
@@ -168,6 +171,9 @@ class MonevController extends GetxController {
       activeBnClassD: activeBnClassD,
       totalNewMember: totalNewMember,
       totalKdpu: totalKdpu,
+      narrationMal: narrationMal,
+      narrationBn: narrationBn,
+      narrationDkw: narrationDkw,
       createdAt: now,
       updatedAt: now,
     );

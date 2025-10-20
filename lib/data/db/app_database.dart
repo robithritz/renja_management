@@ -72,6 +72,9 @@ class AppDatabase {
     active_bn_class_D INTEGER,
     total_new_member INTEGER,
     total_kdpu INTEGER,
+    narration_mal TEXT,
+    narration_bn TEXT,
+    narration_dkw TEXT,
     created_at TEXT,
     updated_at TEXT
   );
@@ -90,7 +93,7 @@ class AppDatabase {
     final path = p.join(dbPath, 'renja_management.db');
     return openDatabase(
       path,
-      version: 7,
+      version: 8,
       onCreate: (db, version) async {
         await db.execute(_createTableRenja);
         await db.execute(_createTableShaf);
@@ -123,6 +126,23 @@ class AppDatabase {
           } catch (_) {}
           try {
             await db.execute(_createTableMonev);
+          } catch (_) {}
+        }
+        if (oldVersion < 8) {
+          try {
+            await db.execute(
+              'ALTER TABLE $tableMonev ADD COLUMN narration_mal TEXT',
+            );
+          } catch (_) {}
+          try {
+            await db.execute(
+              'ALTER TABLE $tableMonev ADD COLUMN narration_bn TEXT',
+            );
+          } catch (_) {}
+          try {
+            await db.execute(
+              'ALTER TABLE $tableMonev ADD COLUMN narration_dkw TEXT',
+            );
           } catch (_) {}
         }
       },

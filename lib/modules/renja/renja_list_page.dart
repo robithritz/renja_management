@@ -137,14 +137,14 @@ class RenjaListPage extends StatelessWidget {
                                             (r.isTergelar == true
                                                     ? Colors.green
                                                     : Colors.red)
-                                                .withOpacity(0.12),
+                                                .withValues(alpha: 0.12),
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
                                           color:
                                               (r.isTergelar == true
                                                       ? Colors.green
                                                       : Colors.red)
-                                                  .withOpacity(0.5),
+                                                  .withValues(alpha: 0.5),
                                         ),
                                       ),
                                       child: ConstrainedBox(
@@ -330,6 +330,8 @@ class _CalendarView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Get.find<RenjaController>();
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
     return Obx(() {
       final month = c.currentMonth.value;
       final first = DateTime(month.year, month.month, 1);
@@ -357,7 +359,6 @@ class _CalendarView extends StatelessWidget {
                   headerFmt.format(month),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
-
                 IconButton(
                   icon: const Icon(Icons.chevron_right),
                   onPressed: () {
@@ -368,221 +369,271 @@ class _CalendarView extends StatelessWidget {
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Expanded(child: Center(child: Text('Mon'))),
-                Expanded(child: Center(child: Text('Tue'))),
-                Expanded(child: Center(child: Text('Wed'))),
-                Expanded(child: Center(child: Text('Thu'))),
-                Expanded(child: Center(child: Text('Fri'))),
-                Expanded(child: Center(child: Text('Sat'))),
-                Expanded(child: Center(child: Text('Sun'))),
-              ],
+          if (!isMobile)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
+                  Expanded(child: Center(child: Text('Mon'))),
+                  Expanded(child: Center(child: Text('Tue'))),
+                  Expanded(child: Center(child: Text('Wed'))),
+                  Expanded(child: Center(child: Text('Thu'))),
+                  Expanded(child: Center(child: Text('Fri'))),
+                  Expanded(child: Center(child: Text('Sat'))),
+                  Expanded(child: Center(child: Text('Sun'))),
+                ],
+              ),
             ),
-          ),
           Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                const columns = 7;
-                final total = leading + days;
-                final rows = (total / columns).ceil().clamp(1, 6);
-                final cellWidth = constraints.maxWidth / columns;
-                final cellHeight = constraints.maxHeight / rows;
-                final aspect = cellWidth / cellHeight;
-
-                return GridView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 8,
+            child: isMobile
+                ? _buildMobileCalendar(context, c, month, days, isoFmt, leading)
+                : _buildDesktopCalendar(
+                    context,
+                    c,
+                    month,
+                    days,
+                    isoFmt,
+                    leading,
                   ),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: columns,
-                    childAspectRatio: aspect,
-                  ),
-                  itemCount: leading + days,
-                  itemBuilder: (context, index) {
-                    if (index < leading) return const SizedBox.shrink();
-                    final day = index - leading + 1;
-                    final date = DateTime(month.year, month.month, day);
-                    final iso = isoFmt.format(date);
-                    final items = c.filteredItems
-                        .where((r) => r.date == iso)
-                        .toList();
-                    final has = items.isNotEmpty;
-                    return InkWell(
-                      onTap: () {
-                        if (items.isEmpty) return;
-                        showModalBottomSheet(
-                          context: context,
-                          builder: (_) => SafeArea(
-                            child: ListView.separated(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: items.length,
-                              separatorBuilder: (_, __) =>
-                                  const Divider(height: 1),
-                              itemBuilder: (_, i) {
-                                final r = items[i];
-                                return ListTile(
-                                  title: Text(r.kegiatanDesc),
-                                  subtitle: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '${r.time} • ${r.instansi.asString}',
-                                      ),
-                                      Text(
-                                        'Hijriah: ${r.bulanHijriah.asString} ${r.tahunHijriah}',
-                                      ),
-                                      if (r.sasaran.isNotEmpty)
-                                        Text('Sasaran: ${r.sasaran}'),
-                                      if (r.tujuan.isNotEmpty)
-                                        Text('Tujuan: ${r.tujuan}'),
-                                      if (r.target.isNotEmpty)
-                                        Text('Target: ${r.target}'),
-                                      if (r.pic.isNotEmpty)
-                                        Text('PIC: ${r.pic}'),
-                                      if (r.titikDesc.isNotEmpty)
-                                        Text('Titik: ${r.titikDesc}'),
-                                      if (r.isTergelar == false)
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            top: 6,
-                                          ),
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.red.withOpacity(
-                                                0.12,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              border: Border.all(
-                                                color: Colors.red.withOpacity(
-                                                  0.5,
-                                                ),
-                                              ),
-                                            ),
-                                            child: Text(
-                                              (() {
-                                                final rs =
-                                                    r.reasonTidakTergelar
-                                                        ?.trim() ??
-                                                    '';
-                                                return rs.isNotEmpty
-                                                    ? 'Tidak tergelar — $rs'
-                                                    : 'Tidak tergelar';
-                                              })(),
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.red.shade800,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: has
-                              ? Colors.teal.withValues(alpha: 0.08)
-                              : null,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        child: Stack(
-                          children: [
-                            Positioned(top: 6, right: 6, child: Text('$day')),
-                            Positioned.fill(
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                  top: 22,
-                                  left: 4,
-                                  right: 4,
-                                  bottom: 14,
-                                ),
-                                child: has
-                                    ? Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          ...items
-                                              .take(3)
-                                              .map(
-                                                (e) => Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                        bottom: 2,
-                                                      ),
-                                                  child: Text(
-                                                    e.kegiatanDesc,
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      color: _instansiColor(
-                                                        e.instansi,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                          if (items.length > 3)
-                                            const Text(
-                                              '...',
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                color: Colors.grey,
-                                              ),
-                                            ),
-                                        ],
-                                      )
-                                    : const SizedBox.shrink(),
-                              ),
-                            ),
-                            if (has)
-                              Positioned(
-                                bottom: 6,
-                                left: 0,
-                                right: 0,
-                                child: Center(
-                                  child: Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: const BoxDecoration(
-                                      color: Colors.teal,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
           ),
         ],
       );
     });
+  }
+
+  Widget _buildDesktopCalendar(
+    BuildContext context,
+    RenjaController c,
+    DateTime month,
+    int days,
+    DateFormat isoFmt,
+    int leading,
+  ) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const columns = 7;
+        final total = leading + days;
+        final rows = (total / columns).ceil().clamp(1, 6);
+        final cellWidth = constraints.maxWidth / columns;
+        final cellHeight = constraints.maxHeight / rows;
+        final aspect = cellWidth / cellHeight;
+
+        return GridView.builder(
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            childAspectRatio: aspect,
+          ),
+          itemCount: leading + days,
+          itemBuilder: (context, index) {
+            if (index < leading) return const SizedBox.shrink();
+            final day = index - leading + 1;
+            return _buildCalendarCell(context, c, month, day, isoFmt);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildMobileCalendar(
+    BuildContext context,
+    RenjaController c,
+    DateTime month,
+    int days,
+    DateFormat isoFmt,
+    int leading,
+  ) {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      itemCount: (days / 2).ceil(),
+      itemBuilder: (context, rowIndex) {
+        final day1 = rowIndex * 2 + 1;
+        final day2 = day1 + 1;
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 120,
+                  child: _buildCalendarCell(context, c, month, day1, isoFmt),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: day2 <= days
+                    ? SizedBox(
+                        height: 120,
+                        child: _buildCalendarCell(
+                          context,
+                          c,
+                          month,
+                          day2,
+                          isoFmt,
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCalendarCell(
+    BuildContext context,
+    RenjaController c,
+    DateTime month,
+    int day,
+    DateFormat isoFmt,
+  ) {
+    final date = DateTime(month.year, month.month, day);
+    final iso = isoFmt.format(date);
+    final items = c.filteredItems.where((r) => r.date == iso).toList();
+    final has = items.isNotEmpty;
+
+    return InkWell(
+      onTap: () {
+        if (items.isEmpty) return;
+        showModalBottomSheet(
+          context: context,
+          builder: (_) => SafeArea(
+            child: ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: items.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (_, i) {
+                final r = items[i];
+                return ListTile(
+                  title: Text(r.kegiatanDesc),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${r.time} • ${r.instansi.asString}'),
+                      Text(
+                        'Hijriah: ${r.bulanHijriah.asString} ${r.tahunHijriah}',
+                      ),
+                      if (r.sasaran.isNotEmpty) Text('Sasaran: ${r.sasaran}'),
+                      if (r.tujuan.isNotEmpty) Text('Tujuan: ${r.tujuan}'),
+                      if (r.target.isNotEmpty) Text('Target: ${r.target}'),
+                      if (r.pic.isNotEmpty) Text('PIC: ${r.pic}'),
+                      if (r.titikDesc.isNotEmpty) Text('Titik: ${r.titikDesc}'),
+                      if (r.isTergelar == false)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.red.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            child: Text(
+                              (() {
+                                final rs = r.reasonTidakTergelar?.trim() ?? '';
+                                return rs.isNotEmpty
+                                    ? 'Tidak tergelar — $rs'
+                                    : 'Tidak tergelar';
+                              })(),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.red.shade800,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: has ? Colors.teal.withValues(alpha: 0.08) : null,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(6),
+              child: Align(
+                alignment: Alignment.topRight,
+                child: Text(
+                  '$day',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: has
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ...items
+                              .take(3)
+                              .map(
+                                (e) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 2),
+                                  child: Text(
+                                    e.kegiatanDesc,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: _instansiColor(e.instansi),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          if (items.length > 3)
+                            const Text(
+                              '...',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey,
+                              ),
+                            ),
+                        ],
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ),
+            if (has)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Center(
+                  child: Container(
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: Colors.teal,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

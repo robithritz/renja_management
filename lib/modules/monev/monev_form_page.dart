@@ -41,6 +41,10 @@ class _MonevFormPageState extends State<MonevFormPage> {
   final _newMember = TextEditingController(text: '0');
   final _kdpu = TextEditingController(text: '0');
 
+  final _narrationMal = TextEditingController();
+  final _narrationBn = TextEditingController();
+  final _narrationDkw = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -63,6 +67,9 @@ class _MonevFormPageState extends State<MonevFormPage> {
       _bnD.text = e.activeBnClassD.toString();
       _newMember.text = e.totalNewMember.toString();
       _kdpu.text = e.totalKdpu.toString();
+      _narrationMal.text = e.narrationMal ?? '';
+      _narrationBn.text = e.narrationBn ?? '';
+      _narrationDkw.text = e.narrationDkw ?? '';
     }
     _attachPctListeners();
 
@@ -86,6 +93,9 @@ class _MonevFormPageState extends State<MonevFormPage> {
     _bnD.dispose();
     _newMember.dispose();
     _kdpu.dispose();
+    _narrationMal.dispose();
+    _narrationBn.dispose();
+    _narrationDkw.dispose();
 
     super.dispose();
   }
@@ -290,8 +300,18 @@ class _MonevFormPageState extends State<MonevFormPage> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Expanded(child: _numWithPct(_nomMal, 'Nominal (Rp)', null)),
+                    Expanded(child: _numField(_nomMal, 'Nominal (Rp)')),
                   ],
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _narrationMal,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Narasi MAL',
+                    hintText: 'Catatan atau narasi untuk MAL...',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 const Text('BN'),
@@ -345,21 +365,38 @@ class _MonevFormPageState extends State<MonevFormPage> {
                         _selectedShaf?.totalClassD,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _numWithPct(_newMember, 'New Member', null),
-                    ),
                   ],
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _narrationBn,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Narasi BN',
+                    hintText: 'Catatan atau narasi untuk BN...',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 const Text('DKW'),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Expanded(child: _numWithPct(_kdpu, 'Total KDPU', null)),
-                    const SizedBox(width: 12),
-                    const Expanded(child: SizedBox.shrink()),
+                    Expanded(child: _numField(_kdpu, 'Total KDPU')),
+                    const SizedBox(width: 6),
+                    Expanded(child: _numField(_newMember, 'New Member')),
+                    // const Expanded(child: SizedBox.shrink()),
                   ],
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _narrationDkw,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Narasi DKW',
+                    hintText: 'Catatan atau narasi untuk DKW...',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Row(
@@ -391,6 +428,15 @@ class _MonevFormPageState extends State<MonevFormPage> {
                             activeBnClassD: int.tryParse(_bnD.text) ?? 0,
                             totalNewMember: int.tryParse(_newMember.text) ?? 0,
                             totalKdpu: int.tryParse(_kdpu.text) ?? 0,
+                            narrationMal: _narrationMal.text.trim().isEmpty
+                                ? null
+                                : _narrationMal.text.trim(),
+                            narrationBn: _narrationBn.text.trim().isEmpty
+                                ? null
+                                : _narrationBn.text.trim(),
+                            narrationDkw: _narrationDkw.text.trim().isEmpty
+                                ? null
+                                : _narrationDkw.text.trim(),
                           );
                         } else {
                           await c.updateItem(
@@ -413,6 +459,15 @@ class _MonevFormPageState extends State<MonevFormPage> {
                               totalNewMember:
                                   int.tryParse(_newMember.text) ?? 0,
                               totalKdpu: int.tryParse(_kdpu.text) ?? 0,
+                              narrationMal: _narrationMal.text.trim().isEmpty
+                                  ? null
+                                  : _narrationMal.text.trim(),
+                              narrationBn: _narrationBn.text.trim().isEmpty
+                                  ? null
+                                  : _narrationBn.text.trim(),
+                              narrationDkw: _narrationDkw.text.trim().isEmpty
+                                  ? null
+                                  : _narrationDkw.text.trim(),
                             ),
                           );
                         }
