@@ -607,6 +607,19 @@ class _FilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Get.find<RenjaController>();
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    if (isMobile) {
+      return Padding(
+        padding: const EdgeInsets.all(8),
+        child: ElevatedButton.icon(
+          icon: const Icon(Icons.filter_list),
+          label: const Text('Filter'),
+          onPressed: () => _showFilterDialog(context, c),
+        ),
+      );
+    }
+
     return Obx(() {
       final years = c.items.map((e) => e.tahunHijriah).toSet().toList()..sort();
       final months = HijriahMonth.values.toList()
@@ -756,6 +769,150 @@ class _FilterBar extends StatelessWidget {
         ),
       );
     });
+  }
+
+  void _showFilterDialog(BuildContext context, RenjaController c) {
+    final years = c.items.map((e) => e.tahunHijriah).toSet().toList()..sort();
+    final months = HijriahMonth.values.toList()
+      ..sort((a, b) => a.asString.compareTo(b.asString));
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Obx(
+        () => SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Filter',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Instansi',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                DropdownButton<Instansi?>(
+                  isExpanded: true,
+                  value: c.selectedInstansi.value,
+                  hint: const Text('Instansi'),
+                  items: [
+                    const DropdownMenuItem<Instansi?>(
+                      value: null,
+                      child: Text('All'),
+                    ),
+                    ...Instansi.values.map(
+                      (e) => DropdownMenuItem<Instansi?>(
+                        value: e,
+                        child: Text(e.asString),
+                      ),
+                    ),
+                  ],
+                  onChanged: (v) => c.selectedInstansi.value = v,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Tahun Hijriah',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                DropdownButton<int?>(
+                  isExpanded: true,
+                  value: c.selectedTahunHijriah.value,
+                  hint: const Text('Tahun Hijriah'),
+                  items: [
+                    const DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text('All'),
+                    ),
+                    ...years.map(
+                      (y) =>
+                          DropdownMenuItem<int?>(value: y, child: Text('$y')),
+                    ),
+                  ],
+                  onChanged: (v) => c.selectedTahunHijriah.value = v,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Bulan Hijriah',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                DropdownButton<HijriahMonth?>(
+                  isExpanded: true,
+                  value: c.selectedBulanHijriah.value,
+                  hint: const Text('Bulan Hijriah'),
+                  items: [
+                    const DropdownMenuItem<HijriahMonth?>(
+                      value: null,
+                      child: Text('All'),
+                    ),
+                    ...months.map(
+                      (m) => DropdownMenuItem<HijriahMonth?>(
+                        value: m,
+                        child: Text(m.asString),
+                      ),
+                    ),
+                  ],
+                  onChanged: (v) => c.selectedBulanHijriah.value = v,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Status',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                DropdownButton<bool?>(
+                  isExpanded: true,
+                  value: c.selectedTergelar.value,
+                  hint: const Text('Status'),
+                  items: const [
+                    DropdownMenuItem<bool?>(value: null, child: Text('All')),
+                    DropdownMenuItem<bool?>(
+                      value: true,
+                      child: Text('Tergelar'),
+                    ),
+                    DropdownMenuItem<bool?>(
+                      value: false,
+                      child: Text('Tidak tergelar'),
+                    ),
+                  ],
+                  onChanged: (v) => c.selectedTergelar.value = v,
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Done'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
