@@ -14,6 +14,8 @@ import 'dart:typed_data';
 import 'package:hijriyah_indonesia/hijriyah_indonesia.dart';
 
 import '../../shared/controllers/settings_controller.dart';
+import '../shaf/shaf_list_page.dart';
+import '../monev/monev_list_page.dart';
 
 class RenjaListPage extends StatelessWidget {
   const RenjaListPage({super.key});
@@ -55,6 +57,28 @@ class RenjaListPage extends StatelessWidget {
             );
           }),
         ],
+      ),
+      drawer: Drawer(
+        child: ListView(
+          children: [
+            const DrawerHeader(child: Text('Menu')),
+            ListTile(
+              leading: const Icon(Icons.list),
+              title: const Text('Renja'),
+              onTap: () => Get.back(),
+            ),
+            ListTile(
+              leading: const Icon(Icons.group),
+              title: const Text('Shaf'),
+              onTap: () => Get.offAll(() => const ShafListPage()),
+            ),
+            ListTile(
+              leading: const Icon(Icons.assessment),
+              title: const Text('Monev'),
+              onTap: () => Get.offAll(() => const MonevListPage()),
+            ),
+          ],
+        ),
       ),
       body: Obx(() {
         if (c.loading.value) {

@@ -6,6 +6,8 @@ class AppDatabase {
   static final AppDatabase instance = AppDatabase._();
 
   static const tableRenja = 'renja';
+  static const tableShaf = 'shaf';
+  static const tableMonev = 'monev';
 
   static const _createTableRenja =
       '''
@@ -33,6 +35,48 @@ class AppDatabase {
   );
   ''';
 
+  static const _createTableShaf =
+      '''
+  CREATE TABLE IF NOT EXISTS $tableShaf(
+    uuid TEXT PRIMARY KEY,
+    asia_name TEXT,
+    rakit_name TEXT,
+    total_pu INTEGER,
+    total_class_A INTEGER,
+    total_class_B INTEGER,
+    total_class_C INTEGER,
+    total_class_D INTEGER,
+    created_at TEXT,
+    updated_at TEXT
+  );
+  ''';
+
+  static const _createTableMonev =
+      '''
+  CREATE TABLE IF NOT EXISTS $tableMonev(
+    uuid TEXT PRIMARY KEY,
+    shaf_uuid TEXT,
+    bulan_hijriah TEXT,
+    tahun_hijriah INTEGER,
+    week_number INTEGER,
+    active_mal_pu INTEGER,
+    active_mal_class_A INTEGER,
+    active_mal_class_B INTEGER,
+    active_mal_class_C INTEGER,
+    active_mal_class_D INTEGER,
+    nominal_mal INTEGER,
+    active_bn_pu INTEGER,
+    active_bn_class_A INTEGER,
+    active_bn_class_B INTEGER,
+    active_bn_class_C INTEGER,
+    active_bn_class_D INTEGER,
+    total_new_member INTEGER,
+    total_kdpu INTEGER,
+    created_at TEXT,
+    updated_at TEXT
+  );
+  ''';
+
   Database? _db;
 
   Future<Database> get database async {
@@ -46,9 +90,11 @@ class AppDatabase {
     final path = p.join(dbPath, 'renja_management.db');
     return openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: (db, version) async {
         await db.execute(_createTableRenja);
+        await db.execute(_createTableShaf);
+        await db.execute(_createTableMonev);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         // Safe migrations to preserve data
@@ -69,6 +115,14 @@ class AppDatabase {
         if (oldVersion < 6) {
           try {
             await db.execute('ALTER TABLE $tableRenja ADD COLUMN shaf TEXT');
+          } catch (_) {}
+        }
+        if (oldVersion < 7) {
+          try {
+            await db.execute(_createTableShaf);
+          } catch (_) {}
+          try {
+            await db.execute(_createTableMonev);
           } catch (_) {}
         }
       },
