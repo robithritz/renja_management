@@ -178,24 +178,22 @@ class _MonevFormPageState extends State<MonevFormPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(height: 8.0),
-                Row(
+                Column(
                   children: [
-                    Expanded(child: _bulanDropdown()),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _tahun,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Tahun Hijriah',
-                          border: OutlineInputBorder(),
-                        ),
-                        validator: (v) =>
-                            (v == null || v.isEmpty) ? 'Wajib diisi' : null,
+                    _bulanDropdown(),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _tahun,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Tahun Hijriah',
+                        border: OutlineInputBorder(),
                       ),
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Wajib diisi' : null,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(child: _weekDropdown()),
+                    const SizedBox(height: 12),
+                    _weekDropdown(),
                   ],
                 ),
                 const SizedBox(height: 12),

@@ -172,7 +172,7 @@ class MonevSummaryPage extends StatelessWidget {
 
                     // MAL Chart
                     const Text(
-                      'Anggota Aktif MAL (Masyarakat Adat Lestari)',
+                      'Aktif MAL',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -198,7 +198,7 @@ class MonevSummaryPage extends StatelessWidget {
 
                     // BN Chart
                     const Text(
-                      'Anggota Aktif BN (Binaan)',
+                      'Aktif BN',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -405,6 +405,8 @@ class MonevSummaryPage extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 12),
         SizedBox(
@@ -418,7 +420,7 @@ class MonevSummaryPage extends StatelessWidget {
                   color: Colors.green,
                   radius: 60,
                   titleStyle: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -429,7 +431,7 @@ class MonevSummaryPage extends StatelessWidget {
                   color: Colors.grey[300]!,
                   radius: 60,
                   titleStyle: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: Colors.black54,
                   ),
@@ -454,9 +456,13 @@ class MonevSummaryPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  'Aktif: $activeCount',
-                  style: const TextStyle(fontSize: 11),
+                Expanded(
+                  child: Text(
+                    'Aktif: $activeCount',
+                    style: const TextStyle(fontSize: 10),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
@@ -473,9 +479,13 @@ class MonevSummaryPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  'Tidak Aktif: $inactiveCount',
-                  style: const TextStyle(fontSize: 11),
+                Expanded(
+                  child: Text(
+                    'Tidak Aktif: $inactiveCount',
+                    style: const TextStyle(fontSize: 10),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
