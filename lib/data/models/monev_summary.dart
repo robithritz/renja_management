@@ -35,6 +35,11 @@ class MonevSummary {
   final int totalClassC;
   final int totalClassD;
 
+  // Narasi/narration fields
+  final String? narrationMal;
+  final String? narrationBn;
+  final String? narrationDkw;
+
   const MonevSummary({
     required this.bulanHijriah,
     required this.tahunHijriah,
@@ -59,6 +64,9 @@ class MonevSummary {
     required this.totalClassB,
     required this.totalClassC,
     required this.totalClassD,
+    this.narrationMal,
+    this.narrationBn,
+    this.narrationDkw,
   });
 
   /// Get total active MAL

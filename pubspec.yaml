@@ -43,6 +43,7 @@ dependencies:
   file_selector: ^1.0.4
   hijriyah_indonesia: ^0.1.7
   fl_chart: ^0.68.0
+  share_plus: ^12.0.0
 
 dev_dependencies:
   flutter_test:

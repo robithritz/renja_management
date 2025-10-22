@@ -631,6 +631,20 @@ class MonevSummaryPage extends StatelessWidget {
         ? '\n🏢 *Shaf:* ${summary.shafName}'
         : '';
 
+    // Build narasi sections if available
+    final malNarasi =
+        summary.narrationMal != null && summary.narrationMal!.isNotEmpty
+        ? '\n\n📝 *Narasi MAL:*\n${summary.narrationMal}'
+        : '';
+    final bnNarasi =
+        summary.narrationBn != null && summary.narrationBn!.isNotEmpty
+        ? '\n\n📝 *Narasi BN:*\n${summary.narrationBn}'
+        : '';
+    final dkwNarasi =
+        summary.narrationDkw != null && summary.narrationDkw!.isNotEmpty
+        ? '\n\n📝 *Narasi DKW:*\n${summary.narrationDkw}'
+        : '';
+
     return '''
 📊 *RINGKASAN MONEV*
 
@@ -644,7 +658,7 @@ class MonevSummaryPage extends StatelessWidget {
 • Kelas C: ${summary.activeMalClassC}/${summary.totalClassC} ($malClassCPct%)
 • Kelas D: ${summary.activeMalClassD}/${summary.totalClassD} ($malClassDPct%)
 • PU: ${summary.activeMalPu}
-• Total: $mal ($malPct%)
+• Total: $mal ($malPct%)$malNarasi
 
 *BN (${summary.totalActiveBn}):*
 • Kelas A: ${summary.activeBnClassA}/${summary.totalClassA} ($bnClassAPct%)
@@ -652,11 +666,11 @@ class MonevSummaryPage extends StatelessWidget {
 • Kelas C: ${summary.activeBnClassC}/${summary.totalClassC} ($bnClassCPct%)
 • Kelas D: ${summary.activeBnClassD}/${summary.totalClassD} ($bnClassDPct%)
 • PU: ${summary.activeBnPu}
-• Total: $bn ($bnPct%)
+• Total: $bn ($bnPct%)$bnNarasi
 
 📊 *Lainnya:*
 • Anggota Baru: $newMember
-• Total KDPU: $kdpu
+• Total KDPU: $kdpu$dkwNarasi
 
 💰 *Nominal MAL:* Rp $nominal
 

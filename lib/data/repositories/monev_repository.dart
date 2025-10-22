@@ -20,7 +20,19 @@ class MonevRepository {
       AppDatabase.tableMonev,
       orderBy: 'tahun_hijriah DESC, week_number ASC',
     );
-    return maps.map((e) => Monev.fromMap(e)).toList();
+
+    // Fetch all shafs to map shaf_uuid to shaf_name
+    final allShafs = await _shafRepository.getAll();
+    final shafMap = {for (final shaf in allShafs) shaf.uuid: shaf.rakitName};
+
+    return maps.map((e) {
+      final monev = Monev.fromMap(e);
+      // Add shaf name if shaf_uuid exists
+      if (monev.shafUuid != null && shafMap.containsKey(monev.shafUuid)) {
+        return monev.copyWith(shafName: shafMap[monev.shafUuid]);
+      }
+      return monev;
+    }).toList();
   }
 
   Future<Monev?> findById(String uuid) async {
@@ -160,6 +172,9 @@ class MonevRepository {
       totalClassB: totalClassB,
       totalClassC: totalClassC,
       totalClassD: totalClassD,
+      narrationMal: firstMonev.narrationMal,
+      narrationBn: firstMonev.narrationBn,
+      narrationDkw: firstMonev.narrationDkw,
     );
   }
 
@@ -183,6 +198,7 @@ class MonevRepository {
     if (maps.isEmpty) return null;
 
     final monev = Monev.fromMap(maps.first);
+    print(monev.narrationMal);
 
     // Get total PU and class totals from Shaf
     final shaf = await _shafRepository.findById(shafUuid);
@@ -216,6 +232,9 @@ class MonevRepository {
       totalClassB: totalClassB,
       totalClassC: totalClassC,
       totalClassD: totalClassD,
+      narrationMal: monev.narrationMal,
+      narrationBn: monev.narrationBn,
+      narrationDkw: monev.narrationDkw,
     );
   }
 

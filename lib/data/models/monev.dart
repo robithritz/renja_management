@@ -3,6 +3,7 @@ import '../../shared/enums/hijriah_month.dart';
 class Monev {
   final String uuid;
   final String? shafUuid;
+  final String? shafName;
   final HijriahMonth bulanHijriah;
   final int tahunHijriah;
   final int weekNumber; // 1..4
@@ -33,6 +34,7 @@ class Monev {
   const Monev({
     required this.uuid,
     required this.shafUuid,
+    this.shafName,
     required this.bulanHijriah,
     required this.tahunHijriah,
     required this.weekNumber,
@@ -59,6 +61,7 @@ class Monev {
   Monev copyWith({
     String? uuid,
     String? shafUuid,
+    String? shafName,
     HijriahMonth? bulanHijriah,
     int? tahunHijriah,
     int? weekNumber,
@@ -84,6 +87,7 @@ class Monev {
     return Monev(
       uuid: uuid ?? this.uuid,
       shafUuid: shafUuid ?? this.shafUuid,
+      shafName: shafName ?? this.shafName,
       bulanHijriah: bulanHijriah ?? this.bulanHijriah,
       tahunHijriah: tahunHijriah ?? this.tahunHijriah,
       weekNumber: weekNumber ?? this.weekNumber,
@@ -112,6 +116,7 @@ class Monev {
     return Monev(
       uuid: map['uuid'] as String,
       shafUuid: map['shaf_uuid'] as String?,
+      shafName: map['shaf_name'] as String?,
       bulanHijriah: HijriahMonthX.fromDb(
         (map['bulan_hijriah'] ?? '') as String,
       ),

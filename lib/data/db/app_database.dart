@@ -91,6 +91,7 @@ class AppDatabase {
   Future<Database> _open() async {
     final dbPath = await getDatabasesPath();
     final path = p.join(dbPath, 'renja_management.db');
+    print('Database path: $path');
     return openDatabase(
       path,
       version: 8,

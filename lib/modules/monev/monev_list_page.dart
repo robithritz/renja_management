@@ -68,9 +68,10 @@ class MonevListPage extends StatelessWidget {
           separatorBuilder: (_, __) => const Divider(height: 1),
           itemBuilder: (context, i) {
             final e = c.items[i];
+            final shafInfo = e.shafName != null ? ' - ${e.shafName}' : '';
             return ListTile(
               title: Text(
-                'Pekan ${e.weekNumber} - ${e.bulanHijriah.asString} ${e.tahunHijriah}',
+                'Pekan ${e.weekNumber} - ${e.bulanHijriah.asString} ${e.tahunHijriah}$shafInfo',
               ),
               subtitle: Text(
                 'BN PU: ${e.activeBnPu} | MAL PU: ${e.activeMalPu} | New: ${e.totalNewMember}',
