@@ -33,7 +33,7 @@ class MonevSummaryPage extends StatelessWidget {
             return IconButton(
               icon: const Icon(Icons.share),
               onPressed: summary != null
-                  ? () => _shareToWhatsApp(summary)
+                  ? () => _shareToWhatsApp(summary, c)
                   : null,
               tooltip: 'Bagikan ke WhatsApp',
             );
@@ -546,8 +546,20 @@ class MonevSummaryPage extends StatelessWidget {
     );
   }
 
-  void _shareToWhatsApp(MonevSummary summary) {
-    final text = _formatSummaryText(summary);
+  Future<void> _shareToWhatsApp(MonevSummary summary, MonevController c) async {
+    // If "semua shaf" is selected (shafUuid is null), fetch individual shaf narrations
+    Map<String, Map<String, String?>>? shafNarrations;
+    if (summary.shafUuid == null &&
+        c.selectedMonth.value != null &&
+        c.selectedYear.value != null) {
+      shafNarrations = await _fetchShafNarrations(
+        c.selectedMonth.value!,
+        c.selectedYear.value!,
+        summary.latestWeekNumber,
+      );
+    }
+
+    final text = _formatSummaryText(summary, shafNarrations);
 
     // On macOS, copy to clipboard instead of share
     if (Platform.isMacOS) {
@@ -564,7 +576,38 @@ class MonevSummaryPage extends StatelessWidget {
     }
   }
 
-  String _formatSummaryText(MonevSummary summary) {
+  Future<Map<String, Map<String, String?>>> _fetchShafNarrations(
+    HijriahMonth bulan,
+    int tahun,
+    int pekan,
+  ) async {
+    final repo = Get.find<MonevRepository>();
+    final allMonevs = await repo.getAll();
+
+    final shafNarrations = <String, Map<String, String?>>{};
+
+    // Filter monev records for the selected month/year/pekan
+    for (final monev in allMonevs) {
+      if (monev.bulanHijriah == bulan &&
+          monev.tahunHijriah == tahun &&
+          monev.weekNumber == pekan &&
+          monev.shafUuid != null &&
+          monev.shafName != null) {
+        shafNarrations[monev.shafName!] = {
+          'mal': monev.narrationMal,
+          'bn': monev.narrationBn,
+          'dkw': monev.narrationDkw,
+        };
+      }
+    }
+
+    return shafNarrations;
+  }
+
+  String _formatSummaryText(
+    MonevSummary summary, [
+    Map<String, Map<String, String?>>? shafNarrations,
+  ]) {
     final mal = summary.totalActiveMal;
     final bn = summary.totalActiveBn;
     final newMember = summary.totalNewMember;
@@ -645,6 +688,26 @@ class MonevSummaryPage extends StatelessWidget {
         ? '\n\n📝 *Narasi DKW:*\n${summary.narrationDkw}'
         : '';
 
+    // Build shaf narrations section if available (for "semua shaf" view)
+    String shafNarationsSection = '';
+    if (shafNarrations != null && shafNarrations.isNotEmpty) {
+      shafNarationsSection = '\n\n📋 *NARASI PER SHAF:*';
+      for (final shafName in shafNarrations.keys) {
+        final narrations = shafNarrations[shafName]!;
+        shafNarationsSection += '\n\n🏢 *$shafName:*';
+
+        if (narrations['mal'] != null && narrations['mal']!.isNotEmpty) {
+          shafNarationsSection += '\n  📝 MAL: ${narrations['mal']}';
+        }
+        if (narrations['bn'] != null && narrations['bn']!.isNotEmpty) {
+          shafNarationsSection += '\n  📝 BN: ${narrations['bn']}';
+        }
+        if (narrations['dkw'] != null && narrations['dkw']!.isNotEmpty) {
+          shafNarationsSection += '\n  📝 DKW: ${narrations['dkw']}';
+        }
+      }
+    }
+
     return '''
 📊 *RINGKASAN MONEV*
 
@@ -672,7 +735,7 @@ class MonevSummaryPage extends StatelessWidget {
 • Anggota Baru: $newMember
 • Total KDPU: $kdpu$dkwNarasi
 
-💰 *Nominal MAL:* Rp $nominal
+💰 *Nominal MAL:* Rp $nominal$shafNarationsSection
 
 ---
 Dibuat dari Aplikasi Renja Management
