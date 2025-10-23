@@ -108,7 +108,7 @@ class RenjaListPage extends StatelessWidget {
                         return ListTile(
                           title: Text(r.kegiatanDesc),
                           subtitle: Text(
-                            '${r.date} ${r.time} • ${r.instansi.asString}',
+                            '${_getDayName(r.date)} ${_formatDate(r.date)} ${r.time} • ${r.instansi.asString}',
                           ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -1156,5 +1156,49 @@ Future<void> _exportExcel({
       snackPosition: SnackPosition.BOTTOM,
       duration: const Duration(seconds: 5),
     );
+  }
+}
+
+String _getDayName(String dateString) {
+  try {
+    final date = DateTime.parse(dateString);
+    const days = [
+      'Minggu',
+      'Senin',
+      'Selasa',
+      'Rabu',
+      'Kamis',
+      'Jumat',
+      'Sabtu',
+    ];
+    return days[date.weekday % 7];
+  } catch (_) {
+    return '';
+  }
+}
+
+String _formatDate(String dateString) {
+  try {
+    final date = DateTime.parse(dateString);
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
+    ];
+    final day = date.day.toString().padLeft(2, '0');
+    final month = months[date.month - 1];
+    final year = date.year;
+    return '$day $month $year';
+  } catch (_) {
+    return '';
   }
 }
