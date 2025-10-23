@@ -584,34 +584,36 @@ class _CalendarView extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: has
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ...items
-                              .take(3)
-                              .map(
-                                (e) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 2),
-                                  child: Text(
-                                    e.kegiatanDesc,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: _instansiColor(e.instansi),
+                    ? SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ...items
+                                .take(2)
+                                .map(
+                                  (e) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 2),
+                                    child: Text(
+                                      e.kegiatanDesc,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: _instansiColor(e.instansi),
+                                      ),
                                     ),
                                   ),
                                 ),
+                            if (items.length > 2)
+                              const Text(
+                                '...',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey,
+                                ),
                               ),
-                          if (items.length > 3)
-                            const Text(
-                              '...',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.grey,
-                              ),
-                            ),
-                        ],
+                          ],
+                        ),
                       )
                     : const SizedBox.shrink(),
               ),
