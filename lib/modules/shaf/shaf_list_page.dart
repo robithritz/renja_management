@@ -23,57 +23,125 @@ class ShafListPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Shaf')),
-      drawer: _AppDrawer(),
+      drawer: _buildAppDrawer(),
       body: Obx(() {
         if (c.loading.value)
           return const Center(child: CircularProgressIndicator());
         if (c.items.isEmpty) {
           return const Center(child: Text('Belum ada data Shaf'));
         }
-        return ListView.separated(
+        return ListView.builder(
+          padding: const EdgeInsets.all(12),
           itemCount: c.items.length,
-          separatorBuilder: (_, __) => const Divider(height: 1),
           itemBuilder: (context, i) {
             final e = c.items[i];
-            return ListTile(
-              title: Text('${e.asiaName}'),
-              subtitle: Text('Rakit: ${e.rakitName} | PU: ${e.totalPu}'),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () async {
-                      await Get.to(() => ShafFormPage(initial: e));
-                      await c.loadAll();
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () async {
-                      final ok = await showDialog<bool>(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text('Hapus Shaf?'),
-                          content: Text(e.asiaName),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: const Text('Batal'),
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Card(
+                elevation: 2,
+                child: InkWell(
+                  onTap: () async {
+                    await Get.to(() => ShafFormPage(initial: e));
+                    await c.loadAll();
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header
+                        Text(
+                          e.asiaName,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 12),
+                        // Info row
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildInfoChip(
+                                icon: Icons.business,
+                                label: e.rakitName,
+                              ),
                             ),
-                            FilledButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              child: const Text('Hapus'),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildInfoChip(
+                                icon: Icons.people,
+                                label: 'PU: ${e.totalPu}',
+                              ),
                             ),
                           ],
                         ),
-                      );
-                      if (ok == true) {
-                        await c.deleteItem(e.uuid);
-                      }
-                    },
+                        const SizedBox(height: 12),
+                        // Class breakdown
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildClassCard('A', e.totalClassA),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildClassCard('B', e.totalClassB),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildClassCard('C', e.totalClassC),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildClassCard('D', e.totalClassD),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        // Action buttons
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton.icon(
+                              icon: const Icon(Icons.edit, size: 18),
+                              label: const Text('Edit'),
+                              onPressed: () async {
+                                await Get.to(() => ShafFormPage(initial: e));
+                                await c.loadAll();
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            TextButton.icon(
+                              icon: const Icon(Icons.delete, size: 18),
+                              label: const Text('Delete'),
+                              onPressed: () async {
+                                final ok = await showDialog<bool>(
+                                  context: context,
+                                  builder: (_) => AlertDialog(
+                                    title: const Text('Hapus Shaf?'),
+                                    content: Text(e.asiaName),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: const Text('Batal'),
+                                      ),
+                                      FilledButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                        child: const Text('Hapus'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (ok == true) {
+                                  await c.deleteItem(e.uuid);
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
             );
           },
@@ -91,30 +159,123 @@ class ShafListPage extends StatelessWidget {
   }
 }
 
-class _AppDrawer extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        children: [
-          const DrawerHeader(child: Text('Menu')),
-          ListTile(
-            leading: const Icon(Icons.list),
-            title: const Text('Renja'),
-            onTap: () => Get.offAll(() => const RenjaListPage()),
+Widget _buildInfoChip({required IconData icon, required String label}) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    decoration: BoxDecoration(
+      color: const Color(0xFF135193).withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: const Color(0xFF135193).withValues(alpha: 0.2)),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: const Color(0xFF135193)),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF135193),
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          ListTile(
-            leading: const Icon(Icons.group),
-            title: const Text('Shaf'),
-            onTap: () => Get.back(),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildClassCard(String className, int count) {
+  return Container(
+    padding: const EdgeInsets.all(8),
+    decoration: BoxDecoration(
+      color: const Color(0xFF93DA49).withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: const Color(0xFF93DA49).withValues(alpha: 0.3)),
+    ),
+    child: Column(
+      children: [
+        Text(
+          'Kelas $className',
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF2D5A1A),
           ),
-          ListTile(
-            leading: const Icon(Icons.assessment),
-            title: const Text('Monev'),
-            onTap: () => Get.offAll(() => const MonevListPage()),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '$count',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF93DA49),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildAppDrawer() {
+  return Drawer(
+    child: ListView(
+      children: [
+        DrawerHeader(
+          decoration: const BoxDecoration(color: Color(0xFF041E42)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              const Icon(Icons.dashboard, color: Colors.white, size: 32),
+              const SizedBox(height: 12),
+              const Text(
+                'Renja Management',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Management System',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.list, color: Color(0xFF135193)),
+          title: const Text('Renja'),
+          onTap: () => Get.offAll(() => const RenjaListPage()),
+        ),
+        ListTile(
+          leading: const Icon(Icons.group, color: Color(0xFF135193)),
+          title: const Text('Shaf'),
+          onTap: () => Get.back(),
+          selected: true,
+          selectedTileColor: const Color(0xFF135193).withValues(alpha: 0.1),
+        ),
+        ListTile(
+          leading: const Icon(Icons.assessment, color: Color(0xFF135193)),
+          title: const Text('Monev'),
+          onTap: () => Get.offAll(() => const MonevListPage()),
+        ),
+        const Divider(height: 24),
+        ListTile(
+          leading: const Icon(Icons.settings, color: Color(0xFF8D949B)),
+          title: const Text('Settings'),
+          onTap: () => Get.back(),
+        ),
+      ],
+    ),
+  );
 }

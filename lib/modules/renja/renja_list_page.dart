@@ -58,28 +58,7 @@ class RenjaListPage extends StatelessWidget {
           }),
         ],
       ),
-      drawer: Drawer(
-        child: ListView(
-          children: [
-            const DrawerHeader(child: Text('Menu')),
-            ListTile(
-              leading: const Icon(Icons.list),
-              title: const Text('Renja'),
-              onTap: () => Get.back(),
-            ),
-            ListTile(
-              leading: const Icon(Icons.group),
-              title: const Text('Shaf'),
-              onTap: () => Get.offAll(() => const ShafListPage()),
-            ),
-            ListTile(
-              leading: const Icon(Icons.assessment),
-              title: const Text('Monev'),
-              onTap: () => Get.offAll(() => const MonevListPage()),
-            ),
-          ],
-        ),
-      ),
+      drawer: _buildAppDrawer(),
       body: Obx(() {
         if (c.loading.value) {
           return const Center(child: CircularProgressIndicator());
@@ -100,213 +79,217 @@ class RenjaListPage extends StatelessWidget {
             Expanded(
               child: filtered.isEmpty
                   ? const Center(child: Text('No data. Tap + to add.'))
-                  : ListView.separated(
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(12),
                       itemCount: filtered.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
                       itemBuilder: (context, i) {
                         final r = filtered[i];
-                        return ListTile(
-                          title: Text(r.kegiatanDesc),
-                          subtitle: Text(
-                            '${_getDayName(r.date)} ${_formatDate(r.date)} ${r.time} • ${r.instansi.asString}',
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (r.isTergelar != null)
-                                Builder(
-                                  builder: (_) {
-                                    final msg = r.isTergelar == false
-                                        ? (() {
-                                            final rs =
-                                                r.reasonTidakTergelar?.trim() ??
-                                                '';
-                                            return rs.isNotEmpty
-                                                ? 'Tidak tergelar — $rs'
-                                                : 'Tidak tergelar';
-                                          })()
-                                        : 'Tergelar';
-                                    final badge = Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      margin: const EdgeInsets.only(right: 8),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            (r.isTergelar == true
-                                                    ? Colors.green
-                                                    : Colors.red)
-                                                .withValues(alpha: 0.12),
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color:
-                                              (r.isTergelar == true
-                                                      ? Colors.green
-                                                      : Colors.red)
-                                                  .withValues(alpha: 0.5),
-                                        ),
-                                      ),
-                                      child: ConstrainedBox(
-                                        constraints: const BoxConstraints(
-                                          maxWidth: 220,
-                                        ),
-                                        child: Text(
-                                          msg,
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: r.isTergelar == true
-                                                ? Colors.green.shade800
-                                                : Colors.red.shade800,
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Card(
+                            elevation: 2,
+                            child: InkWell(
+                              onTap: () async {
+                                await Get.to(() => RenjaFormPage(existing: r));
+                                await c.loadAll();
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Header with status badge
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                r.kegiatanDesc,
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.titleMedium,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                '${_getDayName(r.date)} ${_formatDate(r.date)} • ${r.time}',
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.bodySmall,
+                                              ),
+                                            ],
                                           ),
-                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                      ),
-                                    );
-                                    return r.isTergelar == false
-                                        ? Tooltip(message: msg, child: badge)
-                                        : badge;
-                                  },
-                                ),
-
-                              if ((() {
-                                if (r.isTergelar != null) return false;
-                                try {
-                                  final t = (r.time).trim();
-                                  if (t.isNotEmpty) {
-                                    final dt = DateFormat(
-                                      'yyyy-MM-dd HH:mm',
-                                    ).parse('${r.date} $t');
-                                    return dt.isBefore(DateTime.now());
-                                  } else {
-                                    final d = DateFormat(
-                                      'yyyy-MM-dd',
-                                    ).parse(r.date);
-                                    final endOfDay = DateTime(
-                                      d.year,
-                                      d.month,
-                                      d.day,
-                                      23,
-                                      59,
-                                      59,
-                                    );
-                                    return endOfDay.isBefore(DateTime.now());
-                                  }
-                                } catch (_) {
-                                  try {
-                                    final d = DateFormat(
-                                      'yyyy-MM-dd',
-                                    ).parse(r.date);
-                                    final endOfDay = DateTime(
-                                      d.year,
-                                      d.month,
-                                      d.day,
-                                      23,
-                                      59,
-                                      59,
-                                    );
-                                    return endOfDay.isBefore(DateTime.now());
-                                  } catch (_) {
-                                    return false;
-                                  }
-                                }
-                              })())
-                                IconButton(
-                                  tooltip: 'Belum ditandai: Apakah tergelar?',
-                                  icon: const Icon(
-                                    Icons.warning_amber,
-                                    color: Colors.orange,
-                                  ),
-                                  onPressed: () async {
-                                    final res = await Get.dialog<bool?>(
-                                      AlertDialog(
-                                        title: const Text('Apakah Tergelar?'),
-                                        content: const Text(
-                                          'Jadwal ini sudah terlewat. Apakah kegiatan tergelar?',
+                                        const SizedBox(width: 12),
+                                        if (r.isTergelar != null)
+                                          Builder(
+                                            builder: (_) {
+                                              final isComplete =
+                                                  r.isTergelar == true;
+                                              final statusText = isComplete
+                                                  ? 'Tergelar'
+                                                  : 'Tidak - ${r.reasonTidakTergelar ?? 'No reason'}';
+                                              return Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 6,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color:
+                                                      (isComplete
+                                                              ? const Color(
+                                                                  0xFF93DA49,
+                                                                )
+                                                              : Colors.red)
+                                                          .withValues(
+                                                            alpha: 0.15,
+                                                          ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  border: Border.all(
+                                                    color:
+                                                        (isComplete
+                                                                ? const Color(
+                                                                    0xFF93DA49,
+                                                                  )
+                                                                : Colors.red)
+                                                            .withValues(
+                                                              alpha: 0.5,
+                                                            ),
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  statusText,
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: isComplete
+                                                        ? const Color(
+                                                            0xFF2D5A1A,
+                                                          )
+                                                        : Colors.red.shade800,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    // Info row
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: _buildInfoChip(
+                                            icon: Icons.business,
+                                            label: r.instansi.asString,
+                                          ),
                                         ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Get.back(result: null),
-                                            child: const Text('Batal'),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: _buildInfoChip(
+                                            icon: Icons.calendar_today,
+                                            label:
+                                                '${r.bulanHijriah.asString} ${r.tahunHijriah}',
                                           ),
-                                          TextButton(
-                                            onPressed: () =>
-                                                Get.back(result: false),
-                                            child: const Text('Tidak'),
-                                          ),
-                                          ElevatedButton(
-                                            onPressed: () =>
-                                                Get.back(result: true),
-                                            child: const Text('Ya'),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                    if (res == true) {
-                                      await c.updateItem(
-                                        r.copyWith(
-                                          isTergelar: true,
-                                          reasonTidakTergelar: null,
-                                        ),
-                                      );
-                                    } else if (res == false) {
-                                      final reason = await Get.dialog<String?>(
-                                        const _ReasonDialog(),
-                                      );
-                                      if (reason != null &&
-                                          reason.trim().isNotEmpty) {
-                                        await c.updateItem(
-                                          r.copyWith(
-                                            isTergelar: false,
-                                            reasonTidakTergelar: reason.trim(),
-                                          ),
-                                        );
-                                      }
-                                    }
-                                  },
-                                ),
-                              IconButton(
-                                icon: const Icon(Icons.edit),
-                                onPressed: () async {
-                                  await Get.to(
-                                    () => RenjaFormPage(existing: r),
-                                  );
-                                  await c.loadAll();
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () async {
-                                  final confirm = await Get.dialog<bool>(
-                                    AlertDialog(
-                                      title: const Text('Delete?'),
-                                      content: Text(
-                                        'Delete "${r.kegiatanDesc}"?',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Get.back(result: false),
-                                          child: const Text('Cancel'),
-                                        ),
-                                        TextButton(
-                                          onPressed: () =>
-                                              Get.back(result: true),
-                                          child: const Text('Delete'),
                                         ),
                                       ],
                                     ),
-                                  );
-                                  if (confirm == true) {
-                                    await c.deleteItem(r.uuid);
-                                  }
-                                },
+                                    if (r.sasaran.isNotEmpty ||
+                                        r.tujuan.isNotEmpty) ...[
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        'Sasaran: ${r.sasaran}',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                    const SizedBox(height: 12),
+                                    // Action buttons
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        if (_isDatePassed(r.date) &&
+                                            r.isTergelar == null)
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.warning_amber,
+                                              color: Color(0xFFFFA500),
+                                              size: 24,
+                                            ),
+                                            onPressed: () async {
+                                              await _showTergelarDialog(
+                                                context,
+                                                r,
+                                              );
+                                            },
+                                          ),
+                                        const SizedBox(width: 8),
+                                        TextButton.icon(
+                                          icon: const Icon(
+                                            Icons.edit,
+                                            size: 18,
+                                          ),
+                                          label: const Text('Edit'),
+                                          onPressed: () async {
+                                            await Get.to(
+                                              () => RenjaFormPage(existing: r),
+                                            );
+                                            await c.loadAll();
+                                          },
+                                        ),
+                                        const SizedBox(width: 8),
+                                        TextButton.icon(
+                                          icon: const Icon(
+                                            Icons.delete,
+                                            size: 18,
+                                          ),
+                                          label: const Text('Delete'),
+                                          onPressed: () async {
+                                            final confirm = await Get.dialog<bool>(
+                                              AlertDialog(
+                                                title: const Text('Delete?'),
+                                                content: Text(
+                                                  'Delete "${r.kegiatanDesc}"?',
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Get.back(result: false),
+                                                    child: const Text('Cancel'),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Get.back(result: true),
+                                                    child: const Text('Delete'),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                            if (confirm == true) {
+                                              await c.deleteItem(r.uuid);
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ],
+                            ),
                           ),
                         );
                       },
@@ -652,6 +635,36 @@ Color _instansiColor(Instansi i) {
     case Instansi.UP:
       return Colors.pink;
   }
+}
+
+Widget _buildInfoChip({required IconData icon, required String label}) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    decoration: BoxDecoration(
+      color: const Color(0xFF135193).withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: const Color(0xFF135193).withValues(alpha: 0.2)),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: const Color(0xFF135193)),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF135193),
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _FilterBar extends StatelessWidget {
@@ -1201,4 +1214,186 @@ String _formatDate(String dateString) {
   } catch (_) {
     return '';
   }
+}
+
+bool _isDatePassed(String dateStr) {
+  try {
+    final date = DateTime.parse(dateStr);
+    return date.isBefore(DateTime.now());
+  } catch (_) {
+    return false;
+  }
+}
+
+Future<void> _showTergelarDialog(BuildContext context, Renja renja) async {
+  final reasonCtrl = TextEditingController();
+  bool showReasonField = false;
+
+  await showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setState) => AlertDialog(
+        title: const Text('Set Tergelar Status'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                renja.kegiatanDesc,
+                style: Theme.of(ctx).textTheme.titleSmall,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 16),
+              if (!showReasonField) ...[
+                const Text('Select status:'),
+                const SizedBox(height: 12),
+                // Tergelar button
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    icon: const Icon(Icons.check_circle),
+                    label: const Text('Tergelar'),
+                    onPressed: () async {
+                      final updated = renja.copyWith(
+                        isTergelar: true,
+                        reasonTidakTergelar: null,
+                      );
+                      final c = Get.find<RenjaController>();
+                      await c.updateItem(updated);
+                      if (ctx.mounted) Navigator.pop(ctx);
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Tidak Tergelar button
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    icon: const Icon(Icons.cancel),
+                    label: const Text('Tidak Tergelar'),
+                    onPressed: () {
+                      setState(() {
+                        showReasonField = true;
+                      });
+                    },
+                  ),
+                ),
+              ] else ...[
+                const Text('Reason for not completed:'),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: reasonCtrl,
+                  maxLines: 3,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: 'Enter reason...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          if (showReasonField)
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  showReasonField = false;
+                });
+              },
+              child: const Text('Back'),
+            ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          if (showReasonField)
+            FilledButton(
+              onPressed: () async {
+                if (reasonCtrl.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('Please enter a reason')),
+                  );
+                  return;
+                }
+                final updated = renja.copyWith(
+                  isTergelar: false,
+                  reasonTidakTergelar: reasonCtrl.text.trim(),
+                );
+                final c = Get.find<RenjaController>();
+                await c.updateItem(updated);
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+              child: const Text('Save'),
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget _buildAppDrawer() {
+  return Drawer(
+    child: ListView(
+      children: [
+        DrawerHeader(
+          decoration: const BoxDecoration(color: Color(0xFF041E42)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              const Icon(Icons.dashboard, color: Colors.white, size: 32),
+              const SizedBox(height: 12),
+              const Text(
+                'Renja Management',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Management System',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.list, color: Color(0xFF135193)),
+          title: const Text('Renja'),
+          onTap: () => Get.back(),
+          selected: true,
+          selectedTileColor: const Color(0xFF135193).withValues(alpha: 0.1),
+        ),
+        ListTile(
+          leading: const Icon(Icons.group, color: Color(0xFF135193)),
+          title: const Text('Shaf'),
+          onTap: () => Get.offAll(() => const ShafListPage()),
+        ),
+        ListTile(
+          leading: const Icon(Icons.assessment, color: Color(0xFF135193)),
+          title: const Text('Monev'),
+          onTap: () => Get.offAll(() => const MonevListPage()),
+        ),
+        const Divider(height: 24),
+        ListTile(
+          leading: const Icon(Icons.settings, color: Color(0xFF8D949B)),
+          title: const Text('Settings'),
+          onTap: () => Get.back(),
+        ),
+      ],
+    ),
+  );
 }
