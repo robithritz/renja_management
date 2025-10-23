@@ -329,6 +329,19 @@ class MonevSummaryPage extends StatelessWidget {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 24),
+
+                    // Narration Section
+                    FutureBuilder<Widget>(
+                      future: _buildNarrationSection(summary, c),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const SizedBox.shrink();
+                        }
+                        return snapshot.data ?? const SizedBox.shrink();
+                      },
+                    ),
                   ],
                 );
               }),
@@ -362,7 +375,19 @@ class MonevSummaryPage extends StatelessWidget {
                 },
               ),
             ),
-            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 50,
+                getTitlesWidget: (value, meta) {
+                  return Text(
+                    value.toInt().toString(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  );
+                },
+              ),
+            ),
             topTitles: const AxisTitles(
               sideTitles: SideTitles(showTitles: false),
             ),
@@ -543,6 +568,238 @@ class MonevSummaryPage extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Future<Widget> _buildNarrationSection(
+    MonevSummary summary,
+    MonevController c,
+  ) async {
+    // If "semua shaf" is selected, fetch narrations from all shafs
+    Map<String, Map<String, String?>>? shafNarrations;
+    if (summary.shafUuid == null &&
+        c.selectedMonth.value != null &&
+        c.selectedYear.value != null) {
+      shafNarrations = await _fetchShafNarrations(
+        c.selectedMonth.value!,
+        c.selectedYear.value!,
+        summary.latestWeekNumber,
+      );
+    }
+
+    // Check if there are any narrations to display
+    bool hasNarrations = false;
+    if (summary.shafUuid != null) {
+      // Single shaf: check summary narrations
+      hasNarrations =
+          (summary.narrationMal != null && summary.narrationMal!.isNotEmpty) ||
+          (summary.narrationBn != null && summary.narrationBn!.isNotEmpty) ||
+          (summary.narrationDkw != null && summary.narrationDkw!.isNotEmpty);
+    } else {
+      // All shafs: check if there are any shaf narrations
+      hasNarrations = shafNarrations != null && shafNarrations.isNotEmpty;
+    }
+
+    if (!hasNarrations) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Narasi',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        if (summary.shafUuid != null)
+          // Single shaf narrations
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (summary.narrationMal != null &&
+                  summary.narrationMal!.isNotEmpty)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '📝 Narasi MAL',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          summary.narrationMal!,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              if (summary.narrationBn != null &&
+                  summary.narrationBn!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '📝 Narasi BN',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            summary.narrationBn!,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              if (summary.narrationDkw != null &&
+                  summary.narrationDkw!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '📝 Narasi DKW',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            summary.narrationDkw!,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          )
+        else if (shafNarrations != null && shafNarrations.isNotEmpty)
+          // All shafs narrations
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ...shafNarrations.entries.map((entry) {
+                final shafName = entry.key;
+                final narrations = entry.value;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '🏢 $shafName',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.purple,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          if (narrations['mal'] != null &&
+                              narrations['mal']!.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    '📝 MAL',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    narrations['mal']!,
+                                    style: const TextStyle(fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          if (narrations['bn'] != null &&
+                              narrations['bn']!.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    '📝 BN',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    narrations['bn']!,
+                                    style: const TextStyle(fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          if (narrations['dkw'] != null &&
+                              narrations['dkw']!.isNotEmpty)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  '📝 DKW',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.orange,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  narrations['dkw']!,
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
+      ],
     );
   }
 
