@@ -63,6 +63,37 @@ class RenjaListPage extends StatelessWidget {
         if (c.loading.value) {
           return const Center(child: CircularProgressIndicator());
         }
+        // Show connection error
+        if (c.connectionError.value != null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.cloud_off, size: 64, color: Colors.grey),
+                const SizedBox(height: 16),
+                Text(
+                  'Connection Error',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Text(
+                    c.connectionError.value!,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
+                  onPressed: () => c.loadAll(),
+                ),
+              ],
+            ),
+          );
+        }
         if (c.calendarMode.value) {
           return Column(
             children: [
@@ -78,82 +109,99 @@ class RenjaListPage extends StatelessWidget {
             _FilterBar(),
             Expanded(
               child: filtered.isEmpty
-                  ? const Center(child: Text('No data. Tap + to add.'))
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(12),
-                      itemCount: filtered.length,
-                      itemBuilder: (context, i) {
-                        final r = filtered[i];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Card(
-                            elevation: 2,
-                            child: InkWell(
-                              onTap: () async {
-                                await Get.to(() => RenjaFormPage(existing: r));
-                                await c.loadAll();
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Header with status badge
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                r.kegiatanDesc,
-                                                style: Theme.of(
-                                                  context,
-                                                ).textTheme.titleMedium,
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              const SizedBox(height: 8),
-                                              Text(
-                                                '${_getDayName(r.date)} ${_formatDate(r.date)} • ${r.time}',
-                                                style: Theme.of(
-                                                  context,
-                                                ).textTheme.bodySmall,
-                                              ),
-                                            ],
+                  ? RefreshIndicator(
+                      onRefresh: () => c.loadAll(),
+                      child: const Center(
+                        child: Text('No data. Tap + to add.'),
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: () {
+                        c.currentPage.value = 1;
+                        return c.loadAll();
+                      },
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: filtered.length + (c.hasMorePages ? 1 : 0),
+                        itemBuilder: (context, i) {
+                          // Loading indicator at the end
+                          if (i == filtered.length) {
+                            return Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Center(
+                                child: c.loadingMore.value
+                                    ? const CircularProgressIndicator()
+                                    : ElevatedButton(
+                                        onPressed: () => c.loadMore(),
+                                        child: const Text('Load More'),
+                                      ),
+                              ),
+                            );
+                          }
+
+                          final r = filtered[i];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Card(
+                              elevation: 2,
+                              child: InkWell(
+                                onTap: () async {
+                                  await Get.to(
+                                    () => RenjaFormPage(existing: r),
+                                  );
+                                  await c.loadAll();
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // Header with status badge
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  r.kegiatanDesc,
+                                                  style: Theme.of(
+                                                    context,
+                                                  ).textTheme.titleMedium,
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Text(
+                                                  '${_getDayName(r.date)} ${_formatDate(r.date)} • ${r.time}',
+                                                  style: Theme.of(
+                                                    context,
+                                                  ).textTheme.bodySmall,
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        if (r.isTergelar != null)
-                                          Builder(
-                                            builder: (_) {
-                                              final isComplete =
-                                                  r.isTergelar == true;
-                                              final statusText = isComplete
-                                                  ? 'Tergelar'
-                                                  : 'Tidak - ${r.reasonTidakTergelar ?? 'No reason'}';
-                                              return Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 12,
-                                                      vertical: 6,
-                                                    ),
-                                                decoration: BoxDecoration(
-                                                  color:
-                                                      (isComplete
-                                                              ? const Color(
-                                                                  0xFF93DA49,
-                                                                )
-                                                              : Colors.red)
-                                                          .withValues(
-                                                            alpha: 0.15,
-                                                          ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                  border: Border.all(
+                                          const SizedBox(width: 12),
+                                          if (r.isTergelar != null)
+                                            Builder(
+                                              builder: (_) {
+                                                final isComplete =
+                                                    r.isTergelar == true;
+                                                final statusText = isComplete
+                                                    ? 'Tergelar'
+                                                    : 'Tidak - ${r.reasonTidakTergelar ?? 'No reason'}';
+                                                return Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                        vertical: 6,
+                                                      ),
+                                                  decoration: BoxDecoration(
                                                     color:
                                                         (isComplete
                                                                 ? const Color(
@@ -161,138 +209,167 @@ class RenjaListPage extends StatelessWidget {
                                                                   )
                                                                 : Colors.red)
                                                             .withValues(
-                                                              alpha: 0.5,
+                                                              alpha: 0.15,
                                                             ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
+                                                    border: Border.all(
+                                                      color:
+                                                          (isComplete
+                                                                  ? const Color(
+                                                                      0xFF93DA49,
+                                                                    )
+                                                                  : Colors.red)
+                                                              .withValues(
+                                                                alpha: 0.5,
+                                                              ),
+                                                    ),
                                                   ),
-                                                ),
-                                                child: Text(
-                                                  statusText,
-                                                  style: TextStyle(
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: isComplete
-                                                        ? const Color(
-                                                            0xFF2D5A1A,
-                                                          )
-                                                        : Colors.red.shade800,
+                                                  child: Text(
+                                                    statusText,
+                                                    style: TextStyle(
+                                                      fontSize: 11,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: isComplete
+                                                          ? const Color(
+                                                              0xFF2D5A1A,
+                                                            )
+                                                          : Colors.red.shade800,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                   ),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
+                                                );
+                                              },
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      // Info row
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _buildInfoChip(
+                                              icon: Icons.business,
+                                              label: r.instansi.asString,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: _buildInfoChip(
+                                              icon: Icons.calendar_today,
+                                              label:
+                                                  '${r.bulanHijriah.asString} ${r.tahunHijriah}',
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      if (r.sasaran.isNotEmpty ||
+                                          r.tujuan.isNotEmpty) ...[
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          'Sasaran: ${r.sasaran}',
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                      const SizedBox(height: 12),
+                                      // Action buttons
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        children: [
+                                          if (_isDatePassed(r.date) &&
+                                              r.isTergelar == null)
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.warning_amber,
+                                                color: Color(0xFFFFA500),
+                                                size: 24,
+                                              ),
+                                              onPressed: () async {
+                                                await _showTergelarDialog(
+                                                  context,
+                                                  r,
+                                                );
+                                              },
+                                            ),
+                                          const SizedBox(width: 8),
+                                          TextButton.icon(
+                                            icon: const Icon(
+                                              Icons.edit,
+                                              size: 18,
+                                            ),
+                                            label: const Text('Edit'),
+                                            onPressed: () async {
+                                              await Get.to(
+                                                () =>
+                                                    RenjaFormPage(existing: r),
                                               );
+                                              await c.loadAll();
                                             },
                                           ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    // Info row
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: _buildInfoChip(
-                                            icon: Icons.business,
-                                            label: r.instansi.asString,
+                                          const SizedBox(width: 8),
+                                          TextButton.icon(
+                                            icon: const Icon(
+                                              Icons.delete,
+                                              size: 18,
+                                            ),
+                                            label: const Text('Delete'),
+                                            onPressed: () async {
+                                              final confirm =
+                                                  await Get.dialog<bool>(
+                                                    AlertDialog(
+                                                      title: const Text(
+                                                        'Delete?',
+                                                      ),
+                                                      content: Text(
+                                                        'Delete "${r.kegiatanDesc}"?',
+                                                      ),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () =>
+                                                              Get.back(
+                                                                result: false,
+                                                              ),
+                                                          child: const Text(
+                                                            'Cancel',
+                                                          ),
+                                                        ),
+                                                        TextButton(
+                                                          onPressed: () =>
+                                                              Get.back(
+                                                                result: true,
+                                                              ),
+                                                          child: const Text(
+                                                            'Delete',
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                              if (confirm == true) {
+                                                await c.deleteItem(r.uuid);
+                                              }
+                                            },
                                           ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: _buildInfoChip(
-                                            icon: Icons.calendar_today,
-                                            label:
-                                                '${r.bulanHijriah.asString} ${r.tahunHijriah}',
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    if (r.sasaran.isNotEmpty ||
-                                        r.tujuan.isNotEmpty) ...[
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        'Sasaran: ${r.sasaran}',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodySmall,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                        ],
                                       ),
                                     ],
-                                    const SizedBox(height: 12),
-                                    // Action buttons
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        if (_isDatePassed(r.date) &&
-                                            r.isTergelar == null)
-                                          IconButton(
-                                            icon: const Icon(
-                                              Icons.warning_amber,
-                                              color: Color(0xFFFFA500),
-                                              size: 24,
-                                            ),
-                                            onPressed: () async {
-                                              await _showTergelarDialog(
-                                                context,
-                                                r,
-                                              );
-                                            },
-                                          ),
-                                        const SizedBox(width: 8),
-                                        TextButton.icon(
-                                          icon: const Icon(
-                                            Icons.edit,
-                                            size: 18,
-                                          ),
-                                          label: const Text('Edit'),
-                                          onPressed: () async {
-                                            await Get.to(
-                                              () => RenjaFormPage(existing: r),
-                                            );
-                                            await c.loadAll();
-                                          },
-                                        ),
-                                        const SizedBox(width: 8),
-                                        TextButton.icon(
-                                          icon: const Icon(
-                                            Icons.delete,
-                                            size: 18,
-                                          ),
-                                          label: const Text('Delete'),
-                                          onPressed: () async {
-                                            final confirm = await Get.dialog<bool>(
-                                              AlertDialog(
-                                                title: const Text('Delete?'),
-                                                content: Text(
-                                                  'Delete "${r.kegiatanDesc}"?',
-                                                ),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Get.back(result: false),
-                                                    child: const Text('Cancel'),
-                                                  ),
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Get.back(result: true),
-                                                    child: const Text('Delete'),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                            if (confirm == true) {
-                                              await c.deleteItem(r.uuid);
-                                            }
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
             ),
           ],

@@ -2,14 +2,32 @@ import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../data/models/shaf_entity.dart';
-import '../../data/repositories/shaf_repository.dart';
+import '../../data/repositories/shaf_api_repository.dart';
+
+class ConnectionException implements Exception {
+  final String message;
+  ConnectionException(this.message);
+
+  @override
+  String toString() => message;
+}
 
 class ShafController extends GetxController {
   ShafController(this._repo);
-  final ShafRepository _repo;
+  final ShafApiRepository _repo;
 
   final items = <ShafEntity>[].obs;
   final loading = false.obs;
+  final loadingMore = false.obs;
+  final connectionError = Rx<String?>(null);
+
+  // Pagination
+  final currentPage = 1.obs;
+  final pageLimit = 10.obs;
+  final totalItems = 0.obs;
+  final totalPages = 0.obs;
+
+  bool get hasMorePages => currentPage.value < totalPages.value;
 
   @override
   void onInit() {
@@ -19,10 +37,48 @@ class ShafController extends GetxController {
 
   Future<void> loadAll() async {
     loading.value = true;
+    connectionError.value = null;
+    currentPage.value = 1;
     try {
-      items.value = await _repo.getAll();
+      final response = await _repo.getAll(
+        page: currentPage.value,
+        limit: pageLimit.value,
+      );
+      items.value = response['data'] as List<ShafEntity>;
+      final pagination = response['pagination'] as Map<String, dynamic>;
+      totalItems.value = pagination['total'] as int;
+      totalPages.value = pagination['totalPages'] as int;
+    } on ConnectionException catch (e) {
+      connectionError.value = e.toString();
+    } catch (e) {
+      connectionError.value = 'Failed to load data: $e';
     } finally {
       loading.value = false;
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (loadingMore.value || !hasMorePages) return;
+    loadingMore.value = true;
+    try {
+      currentPage.value++;
+      final response = await _repo.getAll(
+        page: currentPage.value,
+        limit: pageLimit.value,
+      );
+      final newItems = response['data'] as List<ShafEntity>;
+      items.addAll(newItems);
+      final pagination = response['pagination'] as Map<String, dynamic>;
+      totalItems.value = pagination['total'] as int;
+      totalPages.value = pagination['totalPages'] as int;
+    } on ConnectionException catch (e) {
+      currentPage.value--;
+      connectionError.value = e.toString();
+    } catch (e) {
+      currentPage.value--;
+      connectionError.value = 'Failed to load more data: $e';
+    } finally {
+      loadingMore.value = false;
     }
   }
 
@@ -48,7 +104,7 @@ class ShafController extends GetxController {
       createdAt: now,
       updatedAt: now,
     );
-    await _repo.insert(e);
+    await _repo.create(e);
     await loadAll();
   }
 
@@ -63,4 +119,3 @@ class ShafController extends GetxController {
     await loadAll();
   }
 }
-

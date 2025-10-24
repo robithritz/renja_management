@@ -4,16 +4,36 @@ import 'package:uuid/uuid.dart';
 import '../../data/models/monev.dart';
 import '../../data/models/monev_summary.dart';
 import '../../data/models/shaf_entity.dart';
+import '../../data/repositories/monev_api_repository.dart';
 import '../../data/repositories/monev_repository.dart';
-import '../../data/repositories/shaf_repository.dart';
+import '../../data/repositories/shaf_api_repository.dart';
 import '../../shared/enums/hijriah_month.dart';
 
+class ConnectionException implements Exception {
+  final String message;
+  ConnectionException(this.message);
+
+  @override
+  String toString() => message;
+}
+
 class MonevController extends GetxController {
-  MonevController(this._repo);
-  final MonevRepository _repo;
+  MonevController(this._apiRepo, this._localRepo);
+  final MonevApiRepository _apiRepo;
+  final MonevRepository _localRepo;
 
   final items = <Monev>[].obs;
   final loading = false.obs;
+  final loadingMore = false.obs;
+  final connectionError = Rx<String?>(null);
+
+  // Pagination
+  final currentPage = 1.obs;
+  final pageLimit = 10.obs;
+  final totalItems = 0.obs;
+  final totalPages = 0.obs;
+
+  bool get hasMorePages => currentPage.value < totalPages.value;
 
   // Summary-related observables
   final summaryLoading = false.obs;
@@ -35,16 +55,54 @@ class MonevController extends GetxController {
 
   Future<void> loadAll() async {
     loading.value = true;
+    connectionError.value = null;
+    currentPage.value = 1;
     try {
-      items.value = await _repo.getAll();
+      final response = await _apiRepo.getAll(
+        page: currentPage.value,
+        limit: pageLimit.value,
+      );
+      items.value = response['data'] as List<Monev>;
+      final pagination = response['pagination'] as Map<String, dynamic>;
+      totalItems.value = pagination['total'] as int;
+      totalPages.value = pagination['totalPages'] as int;
+    } on ConnectionException catch (e) {
+      connectionError.value = e.toString();
+    } catch (e) {
+      connectionError.value = 'Failed to load data: $e';
     } finally {
       loading.value = false;
     }
   }
 
+  Future<void> loadMore() async {
+    if (loadingMore.value || !hasMorePages) return;
+    loadingMore.value = true;
+    try {
+      currentPage.value++;
+      final response = await _apiRepo.getAll(
+        page: currentPage.value,
+        limit: pageLimit.value,
+      );
+      final newItems = response['data'] as List<Monev>;
+      items.addAll(newItems);
+      final pagination = response['pagination'] as Map<String, dynamic>;
+      totalItems.value = pagination['total'] as int;
+      totalPages.value = pagination['totalPages'] as int;
+    } on ConnectionException catch (e) {
+      currentPage.value--;
+      connectionError.value = e.toString();
+    } catch (e) {
+      currentPage.value--;
+      connectionError.value = 'Failed to load more data: $e';
+    } finally {
+      loadingMore.value = false;
+    }
+  }
+
   Future<void> loadAvailableMonthYears() async {
     try {
-      final maps = await _repo.getAvailableMonthYears();
+      final maps = await _localRepo.getAvailableMonthYears();
       availableMonthYears.value = maps;
 
       // Set default to the first (most recent) month/year
@@ -66,19 +124,19 @@ class MonevController extends GetxController {
     if (selectedMonth.value == null || selectedYear.value == null) return;
 
     try {
-      final shafUuids = await _repo.getAvailableShafsByMonthYear(
+      final shafUuids = await _localRepo.getAvailableShafsByMonthYear(
         selectedMonth.value!,
         selectedYear.value!,
       );
 
-      // Get shaf details from ShafRepository
-      final shafRepo = Get.isRegistered<ShafRepository>()
-          ? Get.find<ShafRepository>()
-          : Get.put(ShafRepository(), permanent: true);
+      // Get shaf details from ShafApiRepository
+      final shafApiRepo = Get.isRegistered<ShafApiRepository>()
+          ? Get.find<ShafApiRepository>()
+          : Get.put(ShafApiRepository(), permanent: true);
 
       final shafs = <ShafEntity>[];
       for (final uuid in shafUuids) {
-        final shaf = await shafRepo.findById(uuid);
+        final shaf = await shafApiRepo.findById(uuid);
         if (shaf != null) {
           shafs.add(shaf);
         }
@@ -100,14 +158,14 @@ class MonevController extends GetxController {
     try {
       if (selectedShafUuid.value != null) {
         // Load summary for specific shaf
-        currentSummary.value = await _repo.getSummaryByMonthYearAndShaf(
+        currentSummary.value = await _localRepo.getSummaryByMonthYearAndShaf(
           selectedMonth.value!,
           selectedYear.value!,
           selectedShafUuid.value!,
         );
       } else {
         // Load summary for all shafs
-        currentSummary.value = await _repo.getSummaryByMonthYear(
+        currentSummary.value = await _localRepo.getSummaryByMonthYear(
           selectedMonth.value!,
           selectedYear.value!,
         );
@@ -177,20 +235,20 @@ class MonevController extends GetxController {
       createdAt: now,
       updatedAt: now,
     );
-    await _repo.insert(e);
+    await _apiRepo.create(e);
     await loadAll();
     await loadAvailableMonthYears();
   }
 
   Future<void> updateItem(Monev e) async {
     final updated = e.copyWith(updatedAt: DateTime.now().toIso8601String());
-    await _repo.update(updated);
+    await _apiRepo.update(updated);
     await loadAll();
     await loadAvailableMonthYears();
   }
 
   Future<void> deleteItem(String uuid) async {
-    await _repo.delete(uuid);
+    await _apiRepo.delete(uuid);
     await loadAll();
     await loadAvailableMonthYears();
   }

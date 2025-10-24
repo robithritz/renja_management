@@ -3,7 +3,10 @@ import 'package:get/get.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'modules/renja/renja_list_page.dart';
-import 'data/repositories/renja_repository.dart';
+import 'data/repositories/renja_api_repository.dart';
+import 'data/repositories/shaf_api_repository.dart';
+import 'data/repositories/monev_api_repository.dart';
+import 'data/repositories/monev_repository.dart';
 import 'modules/renja/renja_controller.dart';
 
 import 'shared/controllers/settings_controller.dart';
@@ -15,7 +18,13 @@ Future<void> main() async {
   // Put dependencies
   Get.put<SettingsController>(SettingsController(), permanent: true);
 
-  Get.put<RenjaRepository>(RenjaRepository(), permanent: true);
+  // Register API repositories
+  Get.put<RenjaApiRepository>(RenjaApiRepository(), permanent: true);
+  Get.put<ShafApiRepository>(ShafApiRepository(), permanent: true);
+  Get.put<MonevApiRepository>(MonevApiRepository(), permanent: true);
+  Get.put<MonevRepository>(MonevRepository(), permanent: true);
+
+  // Register controllers
   Get.put<RenjaController>(RenjaController(Get.find()), permanent: true);
 
   runApp(const MyApp());

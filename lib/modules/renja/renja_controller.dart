@@ -2,16 +2,34 @@ import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../data/models/renja.dart';
-import '../../data/repositories/renja_repository.dart';
+import '../../data/repositories/renja_api_repository.dart';
 import '../../shared/enums/instansi.dart';
 import '../../shared/enums/hijriah_month.dart';
 
+class ConnectionException implements Exception {
+  final String message;
+  ConnectionException(this.message);
+
+  @override
+  String toString() => message;
+}
+
 class RenjaController extends GetxController {
   RenjaController(this._repo);
-  final RenjaRepository _repo;
+  final RenjaApiRepository _repo;
 
   final items = <Renja>[].obs;
   final loading = false.obs;
+  final loadingMore = false.obs;
+  final connectionError = Rx<String?>(null);
+
+  // Pagination
+  final currentPage = 1.obs;
+  final pageLimit = 10.obs;
+  final totalItems = 0.obs;
+  final totalPages = 0.obs;
+
+  bool get hasMorePages => currentPage.value < totalPages.value;
 
   // UI state
   final selectedInstansi = Rxn<Instansi>();
@@ -27,18 +45,6 @@ class RenjaController extends GetxController {
   List<Renja> get filteredItems {
     Iterable<Renja> list = items;
 
-    final inst = selectedInstansi.value;
-    if (inst != null) {
-      list = list.where((r) => r.instansi == inst);
-    }
-    final th = selectedTahunHijriah.value;
-    if (th != null) {
-      list = list.where((r) => r.tahunHijriah == th);
-    }
-    final bln = selectedBulanHijriah.value;
-    if (bln != null) {
-      list = list.where((r) => r.bulanHijriah == bln);
-    }
     final st = selectedTergelar.value;
     if (st != null) {
       list = list.where((r) => r.isTergelar == st);
@@ -51,14 +57,64 @@ class RenjaController extends GetxController {
   void onInit() {
     super.onInit();
     loadAll();
+
+    // Listen to filter changes and reload data from API
+    ever(selectedInstansi, (_) => loadAll());
+    ever(selectedTahunHijriah, (_) => loadAll());
+    ever(selectedBulanHijriah, (_) => loadAll());
   }
 
   Future<void> loadAll() async {
     loading.value = true;
+    connectionError.value = null;
+    currentPage.value = 1;
     try {
-      items.value = await _repo.getAll();
+      final response = await _repo.getAll(
+        instansi: selectedInstansi.value?.asString,
+        // convert the string to enum name
+        bulanHijriah: selectedBulanHijriah.value?.name,
+        tahunHijriah: selectedTahunHijriah.value,
+        page: currentPage.value,
+        limit: pageLimit.value,
+      );
+      items.value = response['data'] as List<Renja>;
+      final pagination = response['pagination'] as Map<String, dynamic>;
+      totalItems.value = pagination['total'] as int;
+      totalPages.value = pagination['totalPages'] as int;
+    } on ConnectionException catch (e) {
+      connectionError.value = e.toString();
+    } catch (e) {
+      connectionError.value = 'Failed to load data: $e';
     } finally {
       loading.value = false;
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (loadingMore.value || !hasMorePages) return;
+    loadingMore.value = true;
+    try {
+      currentPage.value++;
+      final response = await _repo.getAll(
+        instansi: selectedInstansi.value?.asString,
+        bulanHijriah: selectedBulanHijriah.value?.name,
+        tahunHijriah: selectedTahunHijriah.value,
+        page: currentPage.value,
+        limit: pageLimit.value,
+      );
+      final newItems = response['data'] as List<Renja>;
+      items.addAll(newItems);
+      final pagination = response['pagination'] as Map<String, dynamic>;
+      totalItems.value = pagination['total'] as int;
+      totalPages.value = pagination['totalPages'] as int;
+    } on ConnectionException catch (e) {
+      currentPage.value--;
+      connectionError.value = e.toString();
+    } catch (e) {
+      currentPage.value--;
+      connectionError.value = 'Failed to load more data: $e';
+    } finally {
+      loadingMore.value = false;
     }
   }
 
@@ -98,7 +154,7 @@ class RenjaController extends GetxController {
       createdAt: now,
       updatedAt: now,
     );
-    await _repo.insert(renja);
+    await _repo.create(renja);
     await loadAll();
   }
 

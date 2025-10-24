@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../data/repositories/shaf_repository.dart';
 import 'shaf_controller.dart';
 import '../../data/models/shaf_entity.dart';
 import 'shaf_form_page.dart';
@@ -13,9 +12,6 @@ class ShafListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!Get.isRegistered<ShafRepository>()) {
-      Get.put(ShafRepository(), permanent: true);
-    }
     if (!Get.isRegistered<ShafController>()) {
       Get.put(ShafController(Get.find()), permanent: true);
     }
@@ -27,124 +23,176 @@ class ShafListPage extends StatelessWidget {
       body: Obx(() {
         if (c.loading.value)
           return const Center(child: CircularProgressIndicator());
-        if (c.items.isEmpty) {
-          return const Center(child: Text('Belum ada data Shaf'));
+        // Show connection error
+        if (c.connectionError.value != null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.cloud_off, size: 64, color: Colors.grey),
+                const SizedBox(height: 16),
+                Text(
+                  'Connection Error',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Text(
+                    c.connectionError.value!,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
+                  onPressed: () => c.loadAll(),
+                ),
+              ],
+            ),
+          );
         }
-        return ListView.builder(
-          padding: const EdgeInsets.all(12),
-          itemCount: c.items.length,
-          itemBuilder: (context, i) {
-            final e = c.items[i];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Card(
-                elevation: 2,
-                child: InkWell(
-                  onTap: () async {
-                    await Get.to(() => ShafFormPage(initial: e));
-                    await c.loadAll();
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header
-                        Text(
-                          e.asiaName,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 12),
-                        // Info row
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildInfoChip(
-                                icon: Icons.business,
-                                label: e.rakitName,
+        if (c.items.isEmpty) {
+          return RefreshIndicator(
+            onRefresh: () => c.loadAll(),
+            child: const Center(child: Text('Belum ada data Shaf')),
+          );
+        }
+        return RefreshIndicator(
+          onRefresh: () => c.loadAll(),
+          child: ListView.builder(
+            padding: const EdgeInsets.all(12),
+            itemCount: c.items.length + (c.hasMorePages ? 1 : 0),
+            itemBuilder: (context, i) {
+              // Loading indicator at the end
+              if (i == c.items.length) {
+                return Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Center(
+                    child: c.loadingMore.value
+                        ? const CircularProgressIndicator()
+                        : ElevatedButton(
+                            onPressed: () => c.loadMore(),
+                            child: const Text('Load More'),
+                          ),
+                  ),
+                );
+              }
+
+              final e = c.items[i];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Card(
+                  elevation: 2,
+                  child: InkWell(
+                    onTap: () async {
+                      await Get.to(() => ShafFormPage(initial: e));
+                      await c.loadAll();
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header
+                          Text(
+                            e.asiaName,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 12),
+                          // Info row
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildInfoChip(
+                                  icon: Icons.business,
+                                  label: e.rakitName,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildInfoChip(
-                                icon: Icons.people,
-                                label: 'PU: ${e.totalPu}',
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildInfoChip(
+                                  icon: Icons.people,
+                                  label: 'PU: ${e.totalPu}',
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        // Class breakdown
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildClassCard('A', e.totalClassA),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildClassCard('B', e.totalClassB),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildClassCard('C', e.totalClassC),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildClassCard('D', e.totalClassD),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        // Action buttons
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            TextButton.icon(
-                              icon: const Icon(Icons.edit, size: 18),
-                              label: const Text('Edit'),
-                              onPressed: () async {
-                                await Get.to(() => ShafFormPage(initial: e));
-                                await c.loadAll();
-                              },
-                            ),
-                            const SizedBox(width: 8),
-                            TextButton.icon(
-                              icon: const Icon(Icons.delete, size: 18),
-                              label: const Text('Delete'),
-                              onPressed: () async {
-                                final ok = await showDialog<bool>(
-                                  context: context,
-                                  builder: (_) => AlertDialog(
-                                    title: const Text('Hapus Shaf?'),
-                                    content: Text(e.asiaName),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, false),
-                                        child: const Text('Batal'),
-                                      ),
-                                      FilledButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, true),
-                                        child: const Text('Hapus'),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                                if (ok == true) {
-                                  await c.deleteItem(e.uuid);
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          // Class breakdown
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildClassCard('A', e.totalClassA),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _buildClassCard('B', e.totalClassB),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _buildClassCard('C', e.totalClassC),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _buildClassCard('D', e.totalClassD),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          // Action buttons
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton.icon(
+                                icon: const Icon(Icons.edit, size: 18),
+                                label: const Text('Edit'),
+                                onPressed: () async {
+                                  await Get.to(() => ShafFormPage(initial: e));
+                                  await c.loadAll();
+                                },
+                              ),
+                              const SizedBox(width: 8),
+                              TextButton.icon(
+                                icon: const Icon(Icons.delete, size: 18),
+                                label: const Text('Delete'),
+                                onPressed: () async {
+                                  final ok = await showDialog<bool>(
+                                    context: context,
+                                    builder: (_) => AlertDialog(
+                                      title: const Text('Hapus Shaf?'),
+                                      content: Text(e.asiaName),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, false),
+                                          child: const Text('Batal'),
+                                        ),
+                                        FilledButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, true),
+                                          child: const Text('Hapus'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (ok == true) {
+                                    await c.deleteItem(e.uuid);
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         );
       }),
       floatingActionButton: FloatingActionButton.extended(

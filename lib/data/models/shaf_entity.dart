@@ -54,30 +54,30 @@ class ShafEntity {
   factory ShafEntity.fromMap(Map<String, Object?> map) {
     return ShafEntity(
       uuid: map['uuid'] as String,
-      asiaName: (map['asia_name'] ?? '') as String,
-      rakitName: (map['rakit_name'] ?? '') as String,
-      totalPu: (map['total_pu'] as num? ?? 0).toInt(),
-      totalClassA: (map['total_class_A'] as num? ?? 0).toInt(),
-      totalClassB: (map['total_class_B'] as num? ?? 0).toInt(),
-      totalClassC: (map['total_class_C'] as num? ?? 0).toInt(),
-      totalClassD: (map['total_class_D'] as num? ?? 0).toInt(),
-      createdAt: (map['created_at'] ?? '') as String,
-      updatedAt: (map['updated_at'] ?? '') as String,
+      asiaName: (map['asiaName'] ?? '') as String,
+      rakitName: (map['rakitName'] ?? '') as String,
+      totalPu: (map['totalPu'] as num? ?? 0).toInt(),
+      totalClassA: (map['totalClassA'] as num? ?? 0).toInt(),
+      totalClassB: (map['totalClassB'] as num? ?? 0).toInt(),
+      totalClassC: (map['totalClassC'] as num? ?? 0).toInt(),
+      totalClassD: (map['totalClassD'] as num? ?? 0).toInt(),
+      createdAt: (map['createdAt'] ?? '') as String,
+      updatedAt: (map['updatedAt'] ?? '') as String,
     );
   }
 
   Map<String, Object?> toMap() {
     return {
       'uuid': uuid,
-      'asia_name': asiaName,
-      'rakit_name': rakitName,
-      'total_pu': totalPu,
-      'total_class_A': totalClassA,
-      'total_class_B': totalClassB,
-      'total_class_C': totalClassC,
-      'total_class_D': totalClassD,
-      'created_at': createdAt,
-      'updated_at': updatedAt,
+      'asiaName': asiaName,
+      'rakitName': rakitName,
+      'totalPu': totalPu,
+      'totalClassA': totalClassA,
+      'totalClassB': totalClassB,
+      'totalClassC': totalClassC,
+      'totalClassD': totalClassD,
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
     };
   }
 
@@ -86,4 +86,3 @@ class ShafEntity {
     return 'ShafEntity(uuid: $uuid, asia: $asiaName, rakit: $rakitName)';
   }
 }
-

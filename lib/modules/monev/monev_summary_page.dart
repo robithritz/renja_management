@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../data/models/monev_summary.dart';
 import '../../data/repositories/monev_repository.dart';
+import '../../data/repositories/monev_api_repository.dart';
 import '../../shared/enums/hijriah_month.dart';
 import 'monev_controller.dart';
 
@@ -19,8 +20,17 @@ class MonevSummaryPage extends StatelessWidget {
     if (!Get.isRegistered<MonevRepository>()) {
       Get.put(MonevRepository(), permanent: true);
     }
+    if (!Get.isRegistered<MonevApiRepository>()) {
+      Get.put(MonevApiRepository(), permanent: true);
+    }
     if (!Get.isRegistered<MonevController>()) {
-      Get.put(MonevController(Get.find()), permanent: true);
+      Get.put(
+        MonevController(
+          Get.find<MonevApiRepository>(),
+          Get.find<MonevRepository>(),
+        ),
+        permanent: true,
+      );
     }
     final c = Get.find<MonevController>();
 

@@ -92,41 +92,41 @@ class Renja {
   );
 
   factory Renja.fromMap(Map<String, dynamic> map) {
-    final int? it = map['is_tergelar'] as int?;
+    final int? it = map['isTergelar'] as int?;
     final String? sh = map['shaf'] as String?;
     return Renja(
       uuid: map['uuid'] as String,
       date: map['date'] as String,
-      bulanHijriah: HijriahMonthX.fromDb(map['bulan_hijriah'] as String),
-      tahunHijriah: map['tahun_hijriah'] as int,
+      bulanHijriah: HijriahMonthX.fromDb(map['bulanHijriah'] as String),
+      tahunHijriah: map['tahunHijriah'] as int,
       day: map['day'] as int,
       time: map['time'] as String,
-      kegiatanDesc: map['kegiatan_desc'] as String,
-      titikDesc: map['titik_desc'] as String,
+      kegiatanDesc: map['kegiatanDesc'] as String,
+      titikDesc: map['titikDesc'] as String,
       pic: map['pic'] as String,
       sasaran: map['sasaran'] as String,
       target: map['target'] as String,
       tujuan: map['tujuan'] as String,
-      volume: (map['volume'] as num).toDouble(),
+      volume: int.parse(map['volume'] as String).toDouble(),
       instansi: InstansiX.fromString(map['instansi'] as String),
       cost: map['cost'] as int,
       isTergelar: it == null ? null : (it == 1),
-      reasonTidakTergelar: map['reason_tidak_tergelar'] as String?,
-      shaf: sh != null ? ShafX.fromString(sh) : null,
-      createdAt: map['created_at'] as String,
-      updatedAt: map['updated_at'] as String,
+      reasonTidakTergelar: map['reasonTidakTergelar'] as String?,
+      shaf: sh != null && sh.isNotEmpty ? ShafX.fromString(sh) : null,
+      createdAt: map['createdAt'] as String,
+      updatedAt: map['updatedAt'] as String,
     );
   }
 
   Map<String, dynamic> toMap() => {
     'uuid': uuid,
     'date': date,
-    'bulan_hijriah': bulanHijriah.name,
-    'tahun_hijriah': tahunHijriah,
+    'bulanHijriah': bulanHijriah.name,
+    'tahunHijriah': tahunHijriah,
     'day': day,
     'time': time,
-    'kegiatan_desc': kegiatanDesc,
-    'titik_desc': titikDesc,
+    'kegiatanDesc': kegiatanDesc,
+    'titikDesc': titikDesc,
     'pic': pic,
     'sasaran': sasaran,
     'target': target,
@@ -134,10 +134,10 @@ class Renja {
     'volume': volume,
     'instansi': instansi.asString,
     'cost': cost,
-    'is_tergelar': isTergelar == null ? null : (isTergelar! ? 1 : 0),
-    'reason_tidak_tergelar': reasonTidakTergelar,
+    'isTergelar': isTergelar == null ? null : (isTergelar! ? 1 : 0),
+    'reasonTidakTergelar': reasonTidakTergelar,
     'shaf': shaf?.asString,
-    'created_at': createdAt,
-    'updated_at': updatedAt,
+    'createdAt': createdAt,
+    'updatedAt': updatedAt,
   };
 }
