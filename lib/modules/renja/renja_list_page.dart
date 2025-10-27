@@ -743,6 +743,53 @@ Widget _buildInfoChip({required IconData icon, required String label}) {
   );
 }
 
+class _BengkelFilterDropdown extends StatelessWidget {
+  const _BengkelFilterDropdown();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = Get.find<RenjaController>();
+    return Obx(
+      () => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Bengkel',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[700],
+            ),
+          ),
+          SizedBox(
+            width: 180,
+            child: c.loadingBengkel.value
+                ? const Center(child: CircularProgressIndicator())
+                : DropdownButton<String?>(
+                    isExpanded: true,
+                    value: c.selectedShafUuid.value,
+                    hint: const Text('Bengkel'),
+                    items: [
+                      const DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('All'),
+                      ),
+                      ...c.bengkelList.map(
+                        (b) => DropdownMenuItem<String?>(
+                          value: b.uuid,
+                          child: Text(b.bengkelName),
+                        ),
+                      ),
+                    ],
+                    onChanged: (v) => c.selectedShafUuid.value = v,
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _FilterBar extends StatelessWidget {
   const _FilterBar({super.key});
 
@@ -774,6 +821,7 @@ class _FilterBar extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             const Text('Filter:'),
+            _BengkelFilterDropdown(),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -920,137 +968,178 @@ class _FilterBar extends StatelessWidget {
 
     showModalBottomSheet(
       context: context,
-      builder: (context) => Obx(
-        () => SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Filter',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      builder: (context) =>
+          _FilterDialogContent(controller: c, years: years, months: months),
+    );
+  }
+}
+
+class _FilterDialogContent extends StatelessWidget {
+  final RenjaController controller;
+  final List<int> years;
+  final List<HijriahMonth> months;
+
+  const _FilterDialogContent({
+    required this.controller,
+    required this.years,
+    required this.months,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(
+      () => SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Filter',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Bengkel',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Instansi',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[700],
+              ),
+              const SizedBox(height: 8),
+              controller.loadingBengkel.value
+                  ? const Center(child: CircularProgressIndicator())
+                  : DropdownButton<String?>(
+                      isExpanded: true,
+                      value: controller.selectedShafUuid.value,
+                      hint: const Text('Bengkel'),
+                      items: [
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('All'),
+                        ),
+                        ...controller.bengkelList.map(
+                          (b) => DropdownMenuItem<String?>(
+                            value: b.uuid,
+                            child: Text(b.bengkelName),
+                          ),
+                        ),
+                      ],
+                      onChanged: (v) => controller.selectedShafUuid.value = v,
+                    ),
+              const SizedBox(height: 16),
+              Text(
+                'Instansi',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
+                ),
+              ),
+              const SizedBox(height: 8),
+              DropdownButton<Instansi?>(
+                isExpanded: true,
+                value: controller.selectedInstansi.value,
+                hint: const Text('Instansi'),
+                items: [
+                  const DropdownMenuItem<Instansi?>(
+                    value: null,
+                    child: Text('All'),
                   ),
-                ),
-                const SizedBox(height: 8),
-                DropdownButton<Instansi?>(
-                  isExpanded: true,
-                  value: c.selectedInstansi.value,
-                  hint: const Text('Instansi'),
-                  items: [
-                    const DropdownMenuItem<Instansi?>(
-                      value: null,
-                      child: Text('All'),
+                  ...Instansi.values.map(
+                    (e) => DropdownMenuItem<Instansi?>(
+                      value: e,
+                      child: Text(e.asString),
                     ),
-                    ...Instansi.values.map(
-                      (e) => DropdownMenuItem<Instansi?>(
-                        value: e,
-                        child: Text(e.asString),
-                      ),
-                    ),
-                  ],
-                  onChanged: (v) => c.selectedInstansi.value = v,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Tahun Hijriah',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[700],
                   ),
+                ],
+                onChanged: (v) => controller.selectedInstansi.value = v,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Tahun Hijriah',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
                 ),
-                const SizedBox(height: 8),
-                DropdownButton<int?>(
-                  isExpanded: true,
-                  value: c.selectedTahunHijriah.value,
-                  hint: const Text('Tahun Hijriah'),
-                  items: [
-                    const DropdownMenuItem<int?>(
-                      value: null,
-                      child: Text('All'),
-                    ),
-                    ...years.map(
-                      (y) =>
-                          DropdownMenuItem<int?>(value: y, child: Text('$y')),
-                    ),
-                  ],
-                  onChanged: (v) => c.selectedTahunHijriah.value = v,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Bulan Hijriah',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[700],
+              ),
+              const SizedBox(height: 8),
+              DropdownButton<int?>(
+                isExpanded: true,
+                value: controller.selectedTahunHijriah.value,
+                hint: const Text('Tahun Hijriah'),
+                items: [
+                  const DropdownMenuItem<int?>(value: null, child: Text('All')),
+                  ...years.map(
+                    (y) => DropdownMenuItem<int?>(value: y, child: Text('$y')),
                   ),
+                ],
+                onChanged: (v) => controller.selectedTahunHijriah.value = v,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Bulan Hijriah',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
                 ),
-                const SizedBox(height: 8),
-                DropdownButton<HijriahMonth?>(
-                  isExpanded: true,
-                  value: c.selectedBulanHijriah.value,
-                  hint: const Text('Bulan Hijriah'),
-                  items: [
-                    const DropdownMenuItem<HijriahMonth?>(
-                      value: null,
-                      child: Text('All'),
-                    ),
-                    ...months.map(
-                      (m) => DropdownMenuItem<HijriahMonth?>(
-                        value: m,
-                        child: Text(m.asString),
-                      ),
-                    ),
-                  ],
-                  onChanged: (v) => c.selectedBulanHijriah.value = v,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Status',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[700],
+              ),
+              const SizedBox(height: 8),
+              DropdownButton<HijriahMonth?>(
+                isExpanded: true,
+                value: controller.selectedBulanHijriah.value,
+                hint: const Text('Bulan Hijriah'),
+                items: [
+                  const DropdownMenuItem<HijriahMonth?>(
+                    value: null,
+                    child: Text('All'),
                   ),
-                ),
-                const SizedBox(height: 8),
-                DropdownButton<bool?>(
-                  isExpanded: true,
-                  value: c.selectedTergelar.value,
-                  hint: const Text('Status'),
-                  items: const [
-                    DropdownMenuItem<bool?>(value: null, child: Text('All')),
-                    DropdownMenuItem<bool?>(
-                      value: true,
-                      child: Text('Tergelar'),
+                  ...months.map(
+                    (m) => DropdownMenuItem<HijriahMonth?>(
+                      value: m,
+                      child: Text(m.asString),
                     ),
-                    DropdownMenuItem<bool?>(
-                      value: false,
-                      child: Text('Tidak tergelar'),
-                    ),
-                  ],
-                  onChanged: (v) => c.selectedTergelar.value = v,
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Done'),
                   ),
+                ],
+                onChanged: (v) => controller.selectedBulanHijriah.value = v,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Status',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 8),
+              DropdownButton<bool?>(
+                isExpanded: true,
+                value: controller.selectedTergelar.value,
+                hint: const Text('Status'),
+                items: const [
+                  DropdownMenuItem<bool?>(value: null, child: Text('All')),
+                  DropdownMenuItem<bool?>(value: true, child: Text('Tergelar')),
+                  DropdownMenuItem<bool?>(
+                    value: false,
+                    child: Text('Tidak tergelar'),
+                  ),
+                ],
+                onChanged: (v) => controller.selectedTergelar.value = v,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Done'),
+                ),
+              ),
+            ],
           ),
         ),
       ),

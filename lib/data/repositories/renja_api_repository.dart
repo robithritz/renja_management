@@ -16,6 +16,7 @@ class RenjaApiRepository {
     String? bulanHijriah,
     int? tahunHijriah,
     String? shaf,
+    String? shafUuid,
     String sortBy = 'createdAt',
     String sortDir = 'asc',
     int page = 1,
@@ -29,6 +30,7 @@ class RenjaApiRepository {
       if (bulanHijriah != null) params.add('bulanHijriah=$bulanHijriah');
       if (tahunHijriah != null) params.add('tahunHijriah=$tahunHijriah');
       if (shaf != null) params.add('shaf=$shaf');
+      if (shafUuid != null) params.add('shafUuid=$shafUuid');
       params.add('sortBy=$sortBy');
       params.add('sortDir=$sortDir');
       params.add('page=$page');

@@ -2,7 +2,9 @@ import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../data/models/renja.dart';
+import '../../data/models/shaf_entity.dart';
 import '../../data/repositories/renja_api_repository.dart';
+import '../../data/repositories/shaf_api_repository.dart';
 import '../../shared/enums/instansi.dart';
 import '../../shared/enums/hijriah_month.dart';
 
@@ -37,6 +39,11 @@ class RenjaController extends GetxController {
   final selectedBulanHijriah = Rxn<HijriahMonth>();
   final selectedTergelar =
       Rxn<bool>(); // null = semua, true/false = filter status
+  final selectedShafUuid = Rxn<String>(); // Filter by bengkel/shaf
+
+  // Bengkel filter
+  final bengkelList = <ShafEntity>[].obs;
+  final loadingBengkel = false.obs;
 
   final calendarMode = false.obs;
   final currentMonth = DateTime(DateTime.now().year, DateTime.now().month).obs;
@@ -56,12 +63,27 @@ class RenjaController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    loadBengkelList();
     loadAll();
 
     // Listen to filter changes and reload data from API
     ever(selectedInstansi, (_) => loadAll());
     ever(selectedTahunHijriah, (_) => loadAll());
     ever(selectedBulanHijriah, (_) => loadAll());
+    ever(selectedShafUuid, (_) => loadAll());
+  }
+
+  Future<void> loadBengkelList() async {
+    loadingBengkel.value = true;
+    try {
+      final repo = ShafApiRepository();
+      final response = await repo.getAll();
+      bengkelList.value = response['data'] as List<ShafEntity>;
+    } catch (e) {
+      bengkelList.value = [];
+    } finally {
+      loadingBengkel.value = false;
+    }
   }
 
   Future<void> loadAll() async {
@@ -74,6 +96,7 @@ class RenjaController extends GetxController {
         // convert the string to enum name
         bulanHijriah: selectedBulanHijriah.value?.name,
         tahunHijriah: selectedTahunHijriah.value,
+        shafUuid: selectedShafUuid.value,
         page: currentPage.value,
         limit: pageLimit.value,
       );
@@ -99,6 +122,7 @@ class RenjaController extends GetxController {
         instansi: selectedInstansi.value?.asString,
         bulanHijriah: selectedBulanHijriah.value?.name,
         tahunHijriah: selectedTahunHijriah.value,
+        shafUuid: selectedShafUuid.value,
         page: currentPage.value,
         limit: pageLimit.value,
       );
@@ -133,6 +157,7 @@ class RenjaController extends GetxController {
     required double volume,
     required Instansi instansi,
     required int cost,
+    String? shafUuid,
   }) async {
     final now = DateTime.now().toIso8601String();
     final renja = Renja(
@@ -151,6 +176,7 @@ class RenjaController extends GetxController {
       volume: volume,
       instansi: instansi,
       cost: cost,
+      shafUuid: shafUuid,
       createdAt: now,
       updatedAt: now,
     );

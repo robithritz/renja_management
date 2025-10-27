@@ -1,6 +1,7 @@
 import '../../shared/enums/instansi.dart';
 import '../../shared/enums/hijriah_month.dart';
 import '../../shared/enums/shaf.dart';
+import 'shaf_entity.dart';
 
 class Renja {
   final String uuid;
@@ -21,6 +22,8 @@ class Renja {
   final bool? isTergelar; // null = belum ditandai, true/false = status
   final String? reasonTidakTergelar; // required when isTergelar == false
   final Shaf? shaf; // AC/CB, nullable for existing rows
+  final String? shafUuid; // UUID of selected bengkel
+  final ShafEntity? shafEntity; // Full bengkel entity with details
   final String createdAt; // ISO
   final String updatedAt; // ISO
 
@@ -43,6 +46,8 @@ class Renja {
     this.isTergelar,
     this.reasonTidakTergelar,
     this.shaf,
+    this.shafUuid,
+    this.shafEntity,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -66,6 +71,8 @@ class Renja {
     bool? isTergelar,
     String? reasonTidakTergelar,
     Shaf? shaf,
+    String? shafUuid,
+    ShafEntity? shafEntity,
     String? createdAt,
     String? updatedAt,
   }) => Renja(
@@ -87,13 +94,25 @@ class Renja {
     isTergelar: isTergelar ?? this.isTergelar,
     reasonTidakTergelar: reasonTidakTergelar ?? this.reasonTidakTergelar,
     shaf: shaf ?? this.shaf,
+    shafUuid: shafUuid ?? this.shafUuid,
+    shafEntity: shafEntity ?? this.shafEntity,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
 
   factory Renja.fromMap(Map<String, dynamic> map) {
     final int? it = map['isTergelar'] as int?;
-    final String? sh = map['shaf'] as String?;
+
+    // Handle shaf field - can be either String (old format) or Map (new format)
+    String? sh;
+    Map<String, dynamic>? shafMap;
+
+    if (map['shaf'] is Map) {
+      shafMap = map['shaf'] as Map<String, dynamic>;
+    } else if (map['shaf'] is String) {
+      sh = map['shaf'] as String;
+    }
+
     return Renja(
       uuid: map['uuid'] as String,
       date: map['date'] as String,
@@ -113,6 +132,8 @@ class Renja {
       isTergelar: it == null ? null : (it == 1),
       reasonTidakTergelar: map['reasonTidakTergelar'] as String?,
       shaf: sh != null && sh.isNotEmpty ? ShafX.fromString(sh) : null,
+      shafUuid: map['shafUuid'] as String?,
+      shafEntity: shafMap != null ? ShafEntity.fromMap(shafMap) : null,
       createdAt: map['createdAt'] as String,
       updatedAt: map['updatedAt'] as String,
     );
@@ -137,6 +158,8 @@ class Renja {
     'isTergelar': isTergelar == null ? null : (isTergelar! ? 1 : 0),
     'reasonTidakTergelar': reasonTidakTergelar,
     'shaf': shaf?.asString,
+    'shafUuid': shafUuid,
+    'shafEntity': shafEntity?.toMap(),
     'createdAt': createdAt,
     'updatedAt': updatedAt,
   };

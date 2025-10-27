@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import '../../shared/enums/instansi.dart';
 import '../../shared/enums/hijriah_month.dart';
 import '../../data/models/renja.dart';
+import '../../data/models/shaf_entity.dart';
+import '../../data/repositories/shaf_api_repository.dart';
 import '../../shared/formatters/rupiah_input_formatter.dart';
 import 'renja_controller.dart';
 
@@ -34,9 +36,14 @@ class _RenjaFormPageState extends State<RenjaFormPage> {
   final _costCtrl = TextEditingController();
   Instansi _instansi = Instansi.EKL;
 
+  String? _selectedBengkelUuid;
+  List<ShafEntity> _bengkelList = [];
+  bool _loadingBengkel = false;
+
   @override
   void initState() {
     super.initState();
+    _loadBengkelList();
     final e = widget.existing;
     if (e != null) {
       _dateCtrl.text = e.date;
@@ -57,6 +64,26 @@ class _RenjaFormPageState extends State<RenjaFormPage> {
         decimalDigits: 0,
       ).format(e.cost);
       _instansi = e.instansi;
+      _selectedBengkelUuid = e.shafUuid;
+    }
+  }
+
+  Future<void> _loadBengkelList() async {
+    setState(() => _loadingBengkel = true);
+    try {
+      final repo = ShafApiRepository();
+      final response = await repo.getAll();
+      setState(() {
+        _bengkelList = response['data'] as List<ShafEntity>;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load bengkel list: $e')),
+        );
+      }
+    } finally {
+      setState(() => _loadingBengkel = false);
     }
   }
 
@@ -90,6 +117,7 @@ class _RenjaFormPageState extends State<RenjaFormPage> {
           key: _formKey,
           child: Column(
             children: [
+              _buildBengkelDropdown(),
               _text(_kegiatanCtrl, label: 'Kegiatan (desc)', required: true),
               _text(
                 _dateCtrl,
@@ -149,6 +177,7 @@ class _RenjaFormPageState extends State<RenjaFormPage> {
                       volume: double.tryParse(_volumeCtrl.text.trim()) ?? 0,
                       instansi: _instansi,
                       cost: RupiahInputFormatter.parseToInt(_costCtrl.text),
+                      shafUuid: _selectedBengkelUuid,
                     );
                   } else {
                     final e = widget.existing!;
@@ -172,6 +201,7 @@ class _RenjaFormPageState extends State<RenjaFormPage> {
                             e.volume,
                         instansi: _instansi,
                         cost: RupiahInputFormatter.parseToInt(_costCtrl.text),
+                        shafUuid: _selectedBengkelUuid,
                       ),
                     );
                   }
@@ -290,5 +320,34 @@ class _RenjaFormPageState extends State<RenjaFormPage> {
       final mm = picked.minute.toString().padLeft(2, '0');
       _timeCtrl.text = '$hh:$mm';
     }
+  }
+
+  Widget _buildBengkelDropdown() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: _loadingBengkel
+          ? const Center(child: CircularProgressIndicator())
+          : DropdownButtonFormField<String>(
+              value: _selectedBengkelUuid,
+              decoration: const InputDecoration(
+                labelText: 'Bengkel',
+                border: OutlineInputBorder(),
+              ),
+              hint: const Text('Pilih Bengkel'),
+              items: _bengkelList
+                  .map(
+                    (s) => DropdownMenuItem(
+                      value: s.uuid,
+                      child: Text(s.bengkelName),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedBengkelUuid = value;
+                });
+              },
+            ),
+    );
   }
 }
