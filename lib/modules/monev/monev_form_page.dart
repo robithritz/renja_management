@@ -105,7 +105,7 @@ class _MonevFormPageState extends State<MonevFormPage> {
       final repo = Get.isRegistered<ShafApiRepository>()
           ? Get.find<ShafApiRepository>()
           : Get.put(ShafApiRepository(), permanent: true);
-      final response = await repo.getAll();
+      final response = await repo.getAll(bengkelType: 'rakit');
       final list = response['data'] as List<ShafEntity>;
       if (!mounted) return;
       setState(() {
