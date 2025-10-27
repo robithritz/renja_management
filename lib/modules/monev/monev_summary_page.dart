@@ -677,27 +677,47 @@ class MonevSummaryPage extends StatelessWidget {
     MonevController c,
   ) async {
     // If "semua shaf" is selected, fetch narrations from all shafs
+    // OR if a single bengkel is selected but its type is not "rakit"
     Map<String, Map<String, String?>>? shafNarrations;
+    bool shouldShowShafNarrations = false;
+
     if (summary.shafUuid == null &&
         c.selectedMonth.value != null &&
         c.selectedYear.value != null) {
+      // All bengkel selected
+      shouldShowShafNarrations = true;
       shafNarrations = await _fetchShafNarrations(
         c.selectedMonth.value!,
         c.selectedYear.value!,
         summary.latestWeekNumber,
       );
+    } else if (summary.shafUuid != null &&
+        c.selectedMonth.value != null &&
+        c.selectedYear.value != null) {
+      // Single bengkel selected - check if it's not "rakit" type
+      final selectedBengkel = c.bengkelList.firstWhereOrNull(
+        (b) => b.uuid == summary.shafUuid,
+      );
+      if (selectedBengkel != null && selectedBengkel.bengkelType != 'rakit') {
+        shouldShowShafNarrations = true;
+        shafNarrations = await _fetchShafNarrations(
+          c.selectedMonth.value!,
+          c.selectedYear.value!,
+          summary.latestWeekNumber,
+        );
+      }
     }
 
     // Check if there are any narrations to display
     bool hasNarrations = false;
-    if (summary.shafUuid != null) {
-      // Single shaf: check summary narrations
+    if (summary.shafUuid != null && !shouldShowShafNarrations) {
+      // Single shaf (rakit type): check summary narrations
       hasNarrations =
           (summary.narrationMal != null && summary.narrationMal!.isNotEmpty) ||
           (summary.narrationBn != null && summary.narrationBn!.isNotEmpty) ||
           (summary.narrationDkw != null && summary.narrationDkw!.isNotEmpty);
     } else {
-      // All shafs: check if there are any shaf narrations
+      // All shafs or non-rakit single bengkel: check if there are any shaf narrations
       hasNarrations = shafNarrations != null && shafNarrations.isNotEmpty;
     }
 
@@ -713,8 +733,8 @@ class MonevSummaryPage extends StatelessWidget {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
-        if (summary.shafUuid != null)
-          // Single shaf narrations
+        if (summary.shafUuid != null && !shouldShowShafNarrations)
+          // Single rakit bengkel narrations
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -906,6 +926,7 @@ class MonevSummaryPage extends StatelessWidget {
 
   Future<void> _shareToWhatsApp(MonevSummary summary, MonevController c) async {
     // If "semua shaf" is selected (shafUuid is null), fetch individual shaf narrations
+    // OR if a single bengkel is selected but its type is not "rakit"
     Map<String, Map<String, String?>>? shafNarrations;
     if (summary.shafUuid == null &&
         c.selectedMonth.value != null &&
@@ -915,6 +936,20 @@ class MonevSummaryPage extends StatelessWidget {
         c.selectedYear.value!,
         summary.latestWeekNumber,
       );
+    } else if (summary.shafUuid != null &&
+        c.selectedMonth.value != null &&
+        c.selectedYear.value != null) {
+      // Single bengkel selected - check if it's not "rakit" type
+      final selectedBengkel = c.bengkelList.firstWhereOrNull(
+        (b) => b.uuid == summary.shafUuid,
+      );
+      if (selectedBengkel != null && selectedBengkel.bengkelType != 'rakit') {
+        shafNarrations = await _fetchShafNarrations(
+          c.selectedMonth.value!,
+          c.selectedYear.value!,
+          summary.latestWeekNumber,
+        );
+      }
     }
 
     final text = _formatSummaryText(summary, shafNarrations);
