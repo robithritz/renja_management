@@ -38,6 +38,7 @@ class MonevController extends GetxController {
   // Summary-related observables
   final summaryLoading = false.obs;
   final currentSummary = Rx<MonevSummary?>(null);
+  final summaryMonevList = <Monev>[].obs; // Store monev list for narrations
   final availableMonthYears = <Map<String, dynamic>>[].obs;
   final selectedMonth = Rx<HijriahMonth?>(null);
   final selectedYear = Rx<int?>(null);
@@ -96,9 +97,12 @@ class MonevController extends GetxController {
 
       if (monevList.isEmpty) {
         currentSummary.value = null;
+        summaryMonevList.value = [];
         return;
       }
 
+      // Store the monev list for narrations
+      summaryMonevList.value = monevList;
       // Calculate summary from the fetched data
       currentSummary.value = _calculateSummary(monevList);
     } catch (e) {

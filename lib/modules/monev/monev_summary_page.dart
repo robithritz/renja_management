@@ -939,19 +939,20 @@ class MonevSummaryPage extends StatelessWidget {
     int tahun,
     int pekan,
   ) async {
-    final repo = Get.find<MonevRepository>();
-    final allMonevs = await repo.getAll();
+    final c = Get.find<MonevController>();
+    final monevList = c.summaryMonevList;
 
     final shafNarrations = <String, Map<String, String?>>{};
 
-    // Filter monev records for the selected month/year/pekan
-    for (final monev in allMonevs) {
+    // Extract narrations from the API response data (from shaf attribute)
+    for (final monev in monevList) {
       if (monev.bulanHijriah == bulan &&
           monev.tahunHijriah == tahun &&
           monev.weekNumber == pekan &&
           monev.shafUuid != null &&
-          monev.bengkelName != null) {
-        shafNarrations[monev.bengkelName!] = {
+          monev.shaf != null) {
+        final bengkelName = monev.shaf!.bengkelName;
+        shafNarrations[bengkelName] = {
           'mal': monev.narrationMal,
           'bn': monev.narrationBn,
           'dkw': monev.narrationDkw,
@@ -962,6 +963,13 @@ class MonevSummaryPage extends StatelessWidget {
     return shafNarrations;
   }
 
+  String _formatCurrency(int amount) {
+    return amount.toString().replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]}.',
+    );
+  }
+
   String _formatSummaryText(
     MonevSummary summary, [
     Map<String, Map<String, String?>>? shafNarrations,
@@ -970,7 +978,7 @@ class MonevSummaryPage extends StatelessWidget {
     final bn = summary.totalActiveBn;
     final newMember = summary.totalNewMember;
     final kdpu = summary.totalKdpu;
-    final nominal = summary.nominalMal;
+    final nominal = _formatCurrency(summary.nominalMal);
     final bulan = summary.bulanHijriah.asString;
     final tahun = summary.tahunHijriah;
     final pekan = summary.latestWeekNumber;
@@ -1078,7 +1086,6 @@ class MonevSummaryPage extends StatelessWidget {
 • Kelas B: ${summary.activeMalClassB}/${summary.totalClassB} ($malClassBPct%)
 • Kelas C: ${summary.activeMalClassC}/${summary.totalClassC} ($malClassCPct%)
 • Kelas D: ${summary.activeMalClassD}/${summary.totalClassD} ($malClassDPct%)
-• PU: ${summary.activeMalPu}
 • Total: $mal ($malPct%)$malNarasi
 
 *BN (${summary.totalActiveBn}):*
@@ -1086,7 +1093,6 @@ class MonevSummaryPage extends StatelessWidget {
 • Kelas B: ${summary.activeBnClassB}/${summary.totalClassB} ($bnClassBPct%)
 • Kelas C: ${summary.activeBnClassC}/${summary.totalClassC} ($bnClassCPct%)
 • Kelas D: ${summary.activeBnClassD}/${summary.totalClassD} ($bnClassDPct%)
-• PU: ${summary.activeBnPu}
 • Total: $bn ($bnPct%)$bnNarasi
 
 📊 *Lainnya:*
