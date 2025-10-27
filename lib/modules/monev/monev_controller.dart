@@ -46,11 +46,174 @@ class MonevController extends GetxController {
   final availableShafs = <ShafEntity>[].obs;
   final selectedShafUuid = Rx<String?>(null); // null means "all shafs"
 
+  // List page filters
+  final bengkelList = <ShafEntity>[].obs;
+  final loadingBengkel = false.obs;
+  final selectedBengkelUuid = Rxn<String>();
+  final selectedBulanHijriah = Rxn<HijriahMonth>();
+  final selectedTahunHijriah = Rxn<int>();
+  final selectedPekan = Rxn<int>();
+
   @override
   void onInit() {
     super.onInit();
+    loadBengkelList();
     loadAll();
     loadAvailableMonthYears();
+
+    // Listen to filter changes and reload data from API (list page)
+    ever(selectedBengkelUuid, (_) => loadAll());
+    ever(selectedBulanHijriah, (_) => loadAll());
+    ever(selectedTahunHijriah, (_) => loadAll());
+    ever(selectedPekan, (_) => loadAll());
+
+    // Listen to summary filter changes and reload summary
+    ever(selectedBengkelUuid, (_) => loadSummaryWithFilters());
+    ever(selectedBulanHijriah, (_) => loadSummaryWithFilters());
+    ever(selectedTahunHijriah, (_) => loadSummaryWithFilters());
+    ever(selectedPekan, (_) => loadSummaryWithFilters());
+  }
+
+  // Load summary data based on current filters from API
+  Future<void> loadSummaryWithFilters() async {
+    if (selectedBulanHijriah.value == null ||
+        selectedTahunHijriah.value == null) {
+      return;
+    }
+
+    summaryLoading.value = true;
+    try {
+      // Fetch all monev data with current filters
+      final response = await _apiRepo.getAll(
+        shafUuid: selectedBengkelUuid.value,
+        bulanHijriah: selectedBulanHijriah.value?.name,
+        tahunHijriah: selectedTahunHijriah.value,
+        weekNumber: selectedPekan.value,
+        limit: 1000, // Get all records for summary calculation
+      );
+
+      final monevList = response['data'] as List<Monev>? ?? [];
+
+      if (monevList.isEmpty) {
+        currentSummary.value = null;
+        return;
+      }
+
+      // Calculate summary from the fetched data
+      currentSummary.value = _calculateSummary(monevList);
+    } catch (e) {
+      currentSummary.value = null;
+    } finally {
+      summaryLoading.value = false;
+    }
+  }
+
+  // Calculate summary from monev list
+  MonevSummary _calculateSummary(List<Monev> monevList) {
+    if (monevList.isEmpty) {
+      throw Exception('No data to summarize');
+    }
+
+    final firstMonev = monevList.first;
+
+    // Aggregate all values
+    int totalActiveMalPu = 0;
+    int totalActiveMalClassA = 0;
+    int totalActiveMalClassB = 0;
+    int totalActiveMalClassC = 0;
+    int totalActiveMalClassD = 0;
+    int totalNominalMal = 0;
+
+    int totalActiveBnPu = 0;
+    int totalActiveBnClassA = 0;
+    int totalActiveBnClassB = 0;
+    int totalActiveBnClassC = 0;
+    int totalActiveBnClassD = 0;
+
+    int totalNewMember = 0;
+    int totalKdpu = 0;
+
+    // Group by shafUuid to get unique shafs and their totals
+    final shafMap = <String, ShafEntity>{};
+
+    for (final monev in monevList) {
+      totalActiveMalPu += monev.activeMalPu;
+      totalActiveMalClassA += monev.activeMalClassA;
+      totalActiveMalClassB += monev.activeMalClassB;
+      totalActiveMalClassC += monev.activeMalClassC;
+      totalActiveMalClassD += monev.activeMalClassD;
+      totalNominalMal += monev.nominalMal;
+
+      totalActiveBnPu += monev.activeBnPu;
+      totalActiveBnClassA += monev.activeBnClassA;
+      totalActiveBnClassB += monev.activeBnClassB;
+      totalActiveBnClassC += monev.activeBnClassC;
+      totalActiveBnClassD += monev.activeBnClassD;
+
+      totalNewMember += monev.totalNewMember;
+      totalKdpu += monev.totalKdpu;
+
+      // Store shaf data by uuid
+      if (monev.shafUuid != null && monev.shaf != null) {
+        shafMap[monev.shafUuid!] = monev.shaf!;
+      }
+    }
+
+    // Calculate total PU and class totals from unique shafs
+    int totalPu = 0;
+    int totalClassA = 0;
+    int totalClassB = 0;
+    int totalClassC = 0;
+    int totalClassD = 0;
+
+    for (final shaf in shafMap.values) {
+      totalPu += shaf.totalPu;
+      totalClassA += shaf.totalClassA;
+      totalClassB += shaf.totalClassB;
+      totalClassC += shaf.totalClassC;
+      totalClassD += shaf.totalClassD;
+    }
+
+    // Get the latest week number from the data (safely handle single item)
+    final latestWeekNumber = monevList.length == 1
+        ? monevList.first.weekNumber
+        : monevList.map((m) => m.weekNumber).reduce((a, b) => a > b ? a : b);
+
+    // Get bengkel name from shaf data in the response
+    String? bengkelName;
+    if (selectedBengkelUuid.value != null && shafMap.isNotEmpty) {
+      // Get the first shaf's bengkel name from the response
+      bengkelName = shafMap.values.first.bengkelName;
+    }
+
+    return MonevSummary(
+      bulanHijriah: firstMonev.bulanHijriah,
+      tahunHijriah: firstMonev.tahunHijriah,
+      latestWeekNumber: latestWeekNumber,
+      shafUuid: selectedBengkelUuid.value,
+      shafName: bengkelName,
+      activeMalPu: totalActiveMalPu,
+      activeMalClassA: totalActiveMalClassA,
+      activeMalClassB: totalActiveMalClassB,
+      activeMalClassC: totalActiveMalClassC,
+      activeMalClassD: totalActiveMalClassD,
+      nominalMal: totalNominalMal,
+      activeBnPu: totalActiveBnPu,
+      activeBnClassA: totalActiveBnClassA,
+      activeBnClassB: totalActiveBnClassB,
+      activeBnClassC: totalActiveBnClassC,
+      activeBnClassD: totalActiveBnClassD,
+      totalNewMember: totalNewMember,
+      totalKdpu: totalKdpu,
+      totalPu: totalPu,
+      totalClassA: totalClassA,
+      totalClassB: totalClassB,
+      totalClassC: totalClassC,
+      totalClassD: totalClassD,
+      narrationMal: firstMonev.narrationMal,
+      narrationBn: firstMonev.narrationBn,
+      narrationDkw: firstMonev.narrationDkw,
+    );
   }
 
   Future<void> loadAll() async {
@@ -59,6 +222,10 @@ class MonevController extends GetxController {
     currentPage.value = 1;
     try {
       final response = await _apiRepo.getAll(
+        shafUuid: selectedBengkelUuid.value,
+        bulanHijriah: selectedBulanHijriah.value?.name,
+        tahunHijriah: selectedTahunHijriah.value,
+        weekNumber: selectedPekan.value,
         page: currentPage.value,
         limit: pageLimit.value,
       );
@@ -81,6 +248,10 @@ class MonevController extends GetxController {
     try {
       currentPage.value++;
       final response = await _apiRepo.getAll(
+        shafUuid: selectedBengkelUuid.value,
+        bulanHijriah: selectedBulanHijriah.value?.name,
+        tahunHijriah: selectedTahunHijriah.value,
+        weekNumber: selectedPekan.value,
         page: currentPage.value,
         limit: pageLimit.value,
       );
@@ -100,6 +271,21 @@ class MonevController extends GetxController {
     }
   }
 
+  Future<void> loadBengkelList() async {
+    loadingBengkel.value = true;
+    try {
+      final shafApiRepo = Get.isRegistered<ShafApiRepository>()
+          ? Get.find<ShafApiRepository>()
+          : Get.put(ShafApiRepository(), permanent: true);
+      final response = await shafApiRepo.getAll();
+      bengkelList.value = response['data'] as List<ShafEntity>;
+    } catch (e) {
+      bengkelList.value = [];
+    } finally {
+      loadingBengkel.value = false;
+    }
+  }
+
   Future<void> loadAvailableMonthYears() async {
     try {
       final maps = await _localRepo.getAvailableMonthYears();
@@ -108,12 +294,18 @@ class MonevController extends GetxController {
       // Set default to the first (most recent) month/year
       if (maps.isNotEmpty) {
         final first = maps.first;
-        selectedMonth.value = HijriahMonthX.fromDb(
-          first['bulan_hijriah'] as String,
-        );
-        selectedYear.value = first['tahun_hijriah'] as int;
+        final month = HijriahMonthX.fromDb(first['bulan_hijriah'] as String);
+        final year = first['tahun_hijriah'] as int;
+
+        // Set both old and new filter variables
+        selectedMonth.value = month;
+        selectedYear.value = year;
+        selectedBulanHijriah.value = month;
+        selectedTahunHijriah.value = year;
+
         await loadAvailableShafs();
         await loadSummary();
+        await loadSummaryWithFilters();
       }
     } catch (_) {
       // Silently handle error - no data available yet

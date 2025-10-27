@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import '../../data/models/monev.dart';
 import '../../shared/enums/hijriah_month.dart';
 import 'monev_controller.dart';
-import '../../data/repositories/shaf_repository.dart';
+import '../../data/repositories/shaf_api_repository.dart';
 import '../../data/models/shaf_entity.dart';
 
 class MonevFormPage extends StatefulWidget {
@@ -101,34 +101,42 @@ class _MonevFormPageState extends State<MonevFormPage> {
   }
 
   Future<void> _loadShaf() async {
-    final repo = Get.isRegistered<ShafRepository>()
-        ? Get.find<ShafRepository>()
-        : Get.put(ShafRepository(), permanent: true);
-    final list = await repo.getAll();
-    if (!mounted) return;
-    setState(() {
-      _shafList = list;
-      if (_selectedShafUuid != null) {
-        _selectedShaf = _shafList.firstWhere(
-          (s) => s.uuid == _selectedShafUuid,
-          orElse: () => _shafList.isNotEmpty
-              ? _shafList.first
-              : ShafEntity(
-                  uuid: '',
-                  bengkelName: '',
-                  bengkelType: 'rakit',
-                  totalPu: 0,
-                  totalClassA: 0,
-                  totalClassB: 0,
-                  totalClassC: 0,
-                  totalClassD: 0,
-                  createdAt: '',
-                  updatedAt: '',
-                ),
-        );
-        if (_selectedShaf!.uuid.isEmpty) _selectedShaf = null;
-      }
-    });
+    try {
+      final repo = Get.isRegistered<ShafApiRepository>()
+          ? Get.find<ShafApiRepository>()
+          : Get.put(ShafApiRepository(), permanent: true);
+      final response = await repo.getAll();
+      final list = response['data'] as List<ShafEntity>;
+      if (!mounted) return;
+      setState(() {
+        _shafList = list;
+        if (_selectedShafUuid != null) {
+          _selectedShaf = _shafList.firstWhere(
+            (s) => s.uuid == _selectedShafUuid,
+            orElse: () => _shafList.isNotEmpty
+                ? _shafList.first
+                : ShafEntity(
+                    uuid: '',
+                    bengkelName: '',
+                    bengkelType: 'rakit',
+                    totalPu: 0,
+                    totalClassA: 0,
+                    totalClassB: 0,
+                    totalClassC: 0,
+                    totalClassD: 0,
+                    createdAt: '',
+                    updatedAt: '',
+                  ),
+          );
+          if (_selectedShaf!.uuid.isEmpty) _selectedShaf = null;
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _shafList = [];
+      });
+    }
   }
 
   void _attachPctListeners() {

@@ -79,4 +79,36 @@ class MonevSummary {
 
   /// Get total active members (MAL + BN)
   int get totalActive => totalActiveMal + totalActiveBn;
+
+  /// Create MonevSummary from API response map
+  factory MonevSummary.fromMap(Map<String, dynamic> map) {
+    return MonevSummary(
+      bulanHijriah: HijriahMonthX.fromDb(map['bulanHijriah'] as String? ?? ''),
+      tahunHijriah: map['tahunHijriah'] as int? ?? 0,
+      latestWeekNumber: map['latestWeekNumber'] as int? ?? 0,
+      shafUuid: map['shafUuid'] as String?,
+      shafName: map['shafName'] as String?,
+      activeMalPu: map['activeMalPu'] as int? ?? 0,
+      activeMalClassA: map['activeMalClassA'] as int? ?? 0,
+      activeMalClassB: map['activeMalClassB'] as int? ?? 0,
+      activeMalClassC: map['activeMalClassC'] as int? ?? 0,
+      activeMalClassD: map['activeMalClassD'] as int? ?? 0,
+      nominalMal: map['nominalMal'] as int? ?? 0,
+      activeBnPu: map['activeBnPu'] as int? ?? 0,
+      activeBnClassA: map['activeBnClassA'] as int? ?? 0,
+      activeBnClassB: map['activeBnClassB'] as int? ?? 0,
+      activeBnClassC: map['activeBnClassC'] as int? ?? 0,
+      activeBnClassD: map['activeBnClassD'] as int? ?? 0,
+      totalNewMember: map['totalNewMember'] as int? ?? 0,
+      totalKdpu: map['totalKdpu'] as int? ?? 0,
+      totalPu: map['totalPu'] as int? ?? 0,
+      totalClassA: map['totalClassA'] as int? ?? 0,
+      totalClassB: map['totalClassB'] as int? ?? 0,
+      totalClassC: map['totalClassC'] as int? ?? 0,
+      totalClassD: map['totalClassD'] as int? ?? 0,
+      narrationMal: map['narrationMal'] as String?,
+      narrationBn: map['narrationBn'] as String?,
+      narrationDkw: map['narrationDkw'] as String?,
+    );
+  }
 }

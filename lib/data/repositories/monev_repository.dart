@@ -29,7 +29,7 @@ class MonevRepository {
       final monev = Monev.fromMap(e);
       // Add shaf name if shaf_uuid exists
       if (monev.shafUuid != null && shafMap.containsKey(monev.shafUuid)) {
-        return monev.copyWith(shafName: shafMap[monev.shafUuid]);
+        return monev.copyWith(bengkelName: shafMap[monev.shafUuid]);
       }
       return monev;
     }).toList();

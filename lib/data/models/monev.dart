@@ -1,9 +1,10 @@
 import '../../shared/enums/hijriah_month.dart';
+import 'shaf_entity.dart';
 
 class Monev {
   final String uuid;
   final String? shafUuid;
-  final String? shafName;
+  final String? bengkelName;
   final HijriahMonth bulanHijriah;
   final int tahunHijriah;
   final int weekNumber; // 1..4
@@ -28,13 +29,15 @@ class Monev {
   final String? narrationBn;
   final String? narrationDkw;
 
+  final ShafEntity? shaf; // Full shaf/bengkel entity with totals
+
   final String createdAt;
   final String updatedAt;
 
   const Monev({
     required this.uuid,
     required this.shafUuid,
-    this.shafName,
+    this.bengkelName,
     required this.bulanHijriah,
     required this.tahunHijriah,
     required this.weekNumber,
@@ -54,6 +57,7 @@ class Monev {
     this.narrationMal,
     this.narrationBn,
     this.narrationDkw,
+    this.shaf,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -61,7 +65,7 @@ class Monev {
   Monev copyWith({
     String? uuid,
     String? shafUuid,
-    String? shafName,
+    String? bengkelName,
     HijriahMonth? bulanHijriah,
     int? tahunHijriah,
     int? weekNumber,
@@ -81,13 +85,14 @@ class Monev {
     String? narrationMal,
     String? narrationBn,
     String? narrationDkw,
+    ShafEntity? shaf,
     String? createdAt,
     String? updatedAt,
   }) {
     return Monev(
       uuid: uuid ?? this.uuid,
       shafUuid: shafUuid ?? this.shafUuid,
-      shafName: shafName ?? this.shafName,
+      bengkelName: bengkelName ?? this.bengkelName,
       bulanHijriah: bulanHijriah ?? this.bulanHijriah,
       tahunHijriah: tahunHijriah ?? this.tahunHijriah,
       weekNumber: weekNumber ?? this.weekNumber,
@@ -107,6 +112,7 @@ class Monev {
       narrationMal: narrationMal ?? this.narrationMal,
       narrationBn: narrationBn ?? this.narrationBn,
       narrationDkw: narrationDkw ?? this.narrationDkw,
+      shaf: shaf ?? this.shaf,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -116,7 +122,7 @@ class Monev {
     return Monev(
       uuid: map['uuid'] as String,
       shafUuid: map['shafUuid'] as String?,
-      shafName: map['shafName'] as String?,
+      bengkelName: map['bengkelName'] as String?,
       bulanHijriah: HijriahMonthX.fromDb((map['bulanHijriah'] ?? '') as String),
       tahunHijriah: (map['tahunHijriah'] as num? ?? 0).toInt(),
       weekNumber: (map['weekNumber'] as num? ?? 1).toInt(),
@@ -136,6 +142,9 @@ class Monev {
       narrationMal: map['narrationMal'] as String?,
       narrationBn: map['narrationBn'] as String?,
       narrationDkw: map['narrationDkw'] as String?,
+      shaf: map['shaf'] != null
+          ? ShafEntity.fromMap(map['shaf'] as Map<String, dynamic>)
+          : null,
       createdAt: (map['createdAt'] ?? '') as String,
       updatedAt: (map['updatedAt'] ?? '') as String,
     );
@@ -145,7 +154,7 @@ class Monev {
     return {
       'uuid': uuid,
       'shafUuid': shafUuid,
-      'bulanHijriah': bulanHijriah.asString,
+      'bulanHijriah': bulanHijriah.name,
       'tahunHijriah': tahunHijriah,
       'weekNumber': weekNumber,
       'activeMalPu': activeMalPu,
@@ -164,6 +173,7 @@ class Monev {
       'narrationMal': narrationMal,
       'narrationBn': narrationBn,
       'narrationDkw': narrationDkw,
+      'shaf': shaf?.toMap(),
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };

@@ -64,96 +64,161 @@ class MonevSummaryPage extends StatelessWidget {
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Filter Bulan & Tahun Hijriah',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                  child: Obx(() {
+                    final years =
+                        c.availableMonthYears
+                            .map((m) => m['tahun_hijriah'] as int)
+                            .toSet()
+                            .toList()
+                          ..sort((a, b) => b.compareTo(a));
+                    final months = HijriahMonth.values.toList()
+                      ..sort((a, b) => a.asString.compareTo(b.asString));
+                    const pekanNumbers = [1, 2, 3, 4];
+
+                    // Ensure selected year is in the list or reset to null
+                    if (c.selectedTahunHijriah.value != null &&
+                        !years.contains(c.selectedTahunHijriah.value)) {
+                      c.selectedTahunHijriah.value = null;
+                    }
+
+                    // Ensure selected month is valid or reset to null
+                    if (c.selectedBulanHijriah.value != null &&
+                        !months.contains(c.selectedBulanHijriah.value)) {
+                      c.selectedBulanHijriah.value = null;
+                    }
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Filter',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButton<HijriahMonth>(
-                              isExpanded: true,
-                              value: c.selectedMonth.value,
-                              items: HijriahMonth.values
-                                  .map(
-                                    (m) => DropdownMenuItem(
-                                      value: m,
-                                      child: Text(m.asString),
+                        const SizedBox(height: 16),
+                        // Bengkel Filter
+                        Text(
+                          'Bengkel',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        c.loadingBengkel.value
+                            ? const Center(child: CircularProgressIndicator())
+                            : DropdownButton<String?>(
+                                isExpanded: true,
+                                value: c.selectedBengkelUuid.value,
+                                hint: const Text('Bengkel'),
+                                items: [
+                                  const DropdownMenuItem<String?>(
+                                    value: null,
+                                    child: Text('All'),
+                                  ),
+                                  ...c.bengkelList.map(
+                                    (b) => DropdownMenuItem<String?>(
+                                      value: b.uuid,
+                                      child: Text(b.bengkelName),
                                     ),
-                                  )
-                                  .toList(),
-                              onChanged: (month) {
-                                if (month != null &&
-                                    c.selectedYear.value != null) {
-                                  c.selectMonthYear(
-                                    month,
-                                    c.selectedYear.value!,
-                                  );
-                                }
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: DropdownButton<int>(
-                              isExpanded: true,
-                              value: c.selectedYear.value,
-                              items: _getYearDropdownItems(
-                                c.availableMonthYears,
+                                  ),
+                                ],
+                                onChanged: (v) =>
+                                    c.selectedBengkelUuid.value = v,
                               ),
-                              onChanged: (year) {
-                                if (year != null &&
-                                    c.selectedMonth.value != null) {
-                                  c.selectMonthYear(
-                                    c.selectedMonth.value!,
-                                    year,
-                                  );
-                                }
-                              },
-                            ),
+                        const SizedBox(height: 16),
+                        // Tahun Hijriah Filter
+                        Text(
+                          'Tahun Hijriah',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[700],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Filter Shaf',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Obx(() {
-                        final shafs = c.availableShafs;
-                        return DropdownButton<String?>(
+                        const SizedBox(height: 8),
+                        DropdownButton<int?>(
                           isExpanded: true,
-                          value: c.selectedShafUuid.value,
+                          value: c.selectedTahunHijriah.value,
+                          hint: const Text('Tahun'),
                           items: [
-                            const DropdownMenuItem(
+                            const DropdownMenuItem<int?>(
                               value: null,
-                              child: Text('Semua Shaf'),
+                              child: Text('All'),
                             ),
-                            ...shafs.map(
-                              (s) => DropdownMenuItem(
-                                value: s.uuid,
-                                child: Text(s.bengkelName),
+                            ...years.map(
+                              (y) => DropdownMenuItem<int?>(
+                                value: y,
+                                child: Text('$y'),
                               ),
                             ),
                           ],
-                          onChanged: (shafUuid) {
-                            c.selectShaf(shafUuid);
-                          },
-                        );
-                      }),
-                    ],
-                  ),
+                          onChanged: (v) => c.selectedTahunHijriah.value = v,
+                        ),
+                        const SizedBox(height: 16),
+                        // Bulan Hijriah Filter
+                        Text(
+                          'Bulan Hijriah',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        DropdownButton<HijriahMonth?>(
+                          isExpanded: true,
+                          value: c.selectedBulanHijriah.value,
+                          hint: const Text('Bulan'),
+                          items: [
+                            const DropdownMenuItem<HijriahMonth?>(
+                              value: null,
+                              child: Text('All'),
+                            ),
+                            ...months.map(
+                              (m) => DropdownMenuItem<HijriahMonth?>(
+                                value: m,
+                                child: Text(m.asString),
+                              ),
+                            ),
+                          ],
+                          onChanged: (v) => c.selectedBulanHijriah.value = v,
+                        ),
+                        const SizedBox(height: 16),
+                        // Pekan Filter
+                        Text(
+                          'Pekan',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        DropdownButton<int?>(
+                          isExpanded: true,
+                          value: c.selectedPekan.value,
+                          hint: const Text('Pekan'),
+                          items: [
+                            const DropdownMenuItem<int?>(
+                              value: null,
+                              child: Text('All'),
+                            ),
+                            ...pekanNumbers.map(
+                              (p) => DropdownMenuItem<int?>(
+                                value: p,
+                                child: Text('$p'),
+                              ),
+                            ),
+                          ],
+                          onChanged: (v) => c.selectedPekan.value = v,
+                        ),
+                      ],
+                    );
+                  }),
                 ),
               ),
               const SizedBox(height: 24),
@@ -181,17 +246,58 @@ class MonevSummaryPage extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Pekan ${summary.latestWeekNumber} - ${summary.bulanHijriah.asString} ${summary.tahunHijriah}',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Data terbaru dari pekan yang diinput',
-                              style: Theme.of(context).textTheme.bodySmall,
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Pekan ${summary.latestWeekNumber} - ${summary.bulanHijriah.asString} ${summary.tahunHijriah}',
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Data terbaru dari pekan yang diinput',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (summary.shafName != null)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(
+                                        0xFF135193,
+                                      ).withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: const Color(
+                                          0xFF135193,
+                                        ).withValues(alpha: 0.3),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      summary.shafName!,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF135193),
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           ],
                         ),
@@ -421,21 +527,6 @@ class MonevSummaryPage extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  List<DropdownMenuItem<int>> _getYearDropdownItems(
-    List<Map<String, dynamic>> availableMonthYears,
-  ) {
-    final years =
-        availableMonthYears
-            .map((m) => m['tahun_hijriah'] as int)
-            .toSet()
-            .toList()
-          ..sort((a, b) => b.compareTo(a));
-
-    return years
-        .map((y) => DropdownMenuItem(value: y, child: Text(y.toString())))
-        .toList();
   }
 
   Widget _buildActivationPieChart(
@@ -859,8 +950,8 @@ class MonevSummaryPage extends StatelessWidget {
           monev.tahunHijriah == tahun &&
           monev.weekNumber == pekan &&
           monev.shafUuid != null &&
-          monev.shafName != null) {
-        shafNarrations[monev.shafName!] = {
+          monev.bengkelName != null) {
+        shafNarrations[monev.bengkelName!] = {
           'mal': monev.narrationMal,
           'bn': monev.narrationBn,
           'dkw': monev.narrationDkw,
