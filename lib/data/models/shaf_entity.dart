@@ -1,9 +1,10 @@
-import 'package:flutter/foundation.dart';
-
 class ShafEntity {
   final String uuid;
-  final String asiaName;
-  final String rakitName;
+  final String bengkelName;
+  final String bengkelType; // 'rakit', 'asia', 'central'
+  final String? asiaUuid; // UUID of parent asia bengkel (for rakit type)
+  final String?
+  centralUuid; // UUID of parent central bengkel (for rakit or asia type)
   final int totalPu;
   final int totalClassA;
   final int totalClassB;
@@ -14,8 +15,10 @@ class ShafEntity {
 
   const ShafEntity({
     required this.uuid,
-    required this.asiaName,
-    required this.rakitName,
+    required this.bengkelName,
+    required this.bengkelType,
+    this.asiaUuid,
+    this.centralUuid,
     required this.totalPu,
     required this.totalClassA,
     required this.totalClassB,
@@ -27,8 +30,10 @@ class ShafEntity {
 
   ShafEntity copyWith({
     String? uuid,
-    String? asiaName,
-    String? rakitName,
+    String? bengkelName,
+    String? bengkelType,
+    String? asiaUuid,
+    String? centralUuid,
     int? totalPu,
     int? totalClassA,
     int? totalClassB,
@@ -39,8 +44,10 @@ class ShafEntity {
   }) {
     return ShafEntity(
       uuid: uuid ?? this.uuid,
-      asiaName: asiaName ?? this.asiaName,
-      rakitName: rakitName ?? this.rakitName,
+      bengkelName: bengkelName ?? this.bengkelName,
+      bengkelType: bengkelType ?? this.bengkelType,
+      asiaUuid: asiaUuid ?? this.asiaUuid,
+      centralUuid: centralUuid ?? this.centralUuid,
       totalPu: totalPu ?? this.totalPu,
       totalClassA: totalClassA ?? this.totalClassA,
       totalClassB: totalClassB ?? this.totalClassB,
@@ -54,8 +61,10 @@ class ShafEntity {
   factory ShafEntity.fromMap(Map<String, Object?> map) {
     return ShafEntity(
       uuid: map['uuid'] as String,
-      asiaName: (map['asiaName'] ?? '') as String,
-      rakitName: (map['rakitName'] ?? '') as String,
+      bengkelName: (map['bengkelName'] ?? '') as String,
+      bengkelType: (map['bengkelType'] ?? 'rakit') as String,
+      asiaUuid: map['asiaUuid'] as String?,
+      centralUuid: map['centralUuid'] as String?,
       totalPu: (map['totalPu'] as num? ?? 0).toInt(),
       totalClassA: (map['totalClassA'] as num? ?? 0).toInt(),
       totalClassB: (map['totalClassB'] as num? ?? 0).toInt(),
@@ -69,8 +78,10 @@ class ShafEntity {
   Map<String, Object?> toMap() {
     return {
       'uuid': uuid,
-      'asiaName': asiaName,
-      'rakitName': rakitName,
+      'bengkelName': bengkelName,
+      'bengkelType': bengkelType,
+      'asiaUuid': asiaUuid,
+      'centralUuid': centralUuid,
       'totalPu': totalPu,
       'totalClassA': totalClassA,
       'totalClassB': totalClassB,
@@ -83,6 +94,6 @@ class ShafEntity {
 
   @override
   String toString() {
-    return 'ShafEntity(uuid: $uuid, asia: $asiaName, rakit: $rakitName)';
+    return 'ShafEntity(uuid: $uuid, bengkelName: $bengkelName, bengkelType: $bengkelType)';
   }
 }

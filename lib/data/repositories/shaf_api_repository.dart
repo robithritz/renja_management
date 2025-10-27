@@ -10,16 +10,21 @@ class ConnectionException implements Exception {
 }
 
 class ShafApiRepository {
-  // Get all shaf with optional sorting and pagination
+  // Get all shaf with optional sorting, pagination, and filtering
   Future<Map<String, dynamic>> getAll({
+    String? bengkelType,
     String sortBy = 'createdAt',
     String sortDir = 'asc',
     int page = 1,
     int limit = 10,
   }) async {
     try {
-      final endpoint =
+      String endpoint =
           '/shaf?sortBy=$sortBy&sortDir=$sortDir&page=$page&limit=$limit';
+      if (bengkelType != null) {
+        endpoint += '&bengkelType=$bengkelType';
+      }
+
       final response = await ApiService.get(endpoint);
       final responseData = response['data'] as Map<String, dynamic>;
       final items = responseData['data'] as List;
@@ -51,6 +56,7 @@ class ShafApiRepository {
   // Create new shaf
   Future<ShafEntity> create(ShafEntity shaf) async {
     try {
+      print(shaf.toMap());
       final response = await ApiService.post('/shaf', shaf.toMap());
       final data = response['data'] as Map<String, dynamic>;
       return ShafEntity.fromMap(data);

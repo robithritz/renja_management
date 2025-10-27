@@ -23,7 +23,7 @@ class MonevRepository {
 
     // Fetch all shafs to map shaf_uuid to shaf_name
     final allShafs = await _shafRepository.getAll();
-    final shafMap = {for (final shaf in allShafs) shaf.uuid: shaf.rakitName};
+    final shafMap = {for (final shaf in allShafs) shaf.uuid: shaf.bengkelName};
 
     return maps.map((e) {
       final monev = Monev.fromMap(e);
@@ -213,7 +213,7 @@ class MonevRepository {
       tahunHijriah: monev.tahunHijriah,
       latestWeekNumber: monev.weekNumber,
       shafUuid: monev.shafUuid,
-      shafName: shaf?.rakitName,
+      shafName: shaf?.bengkelName,
       activeMalPu: monev.activeMalPu,
       activeMalClassA: monev.activeMalClassA,
       activeMalClassB: monev.activeMalClassB,

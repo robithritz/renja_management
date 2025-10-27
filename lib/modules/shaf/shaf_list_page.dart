@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'shaf_controller.dart';
-import '../../data/models/shaf_entity.dart';
 import 'shaf_form_page.dart';
-import '../renja/renja_list_page.dart';
-import '../monev/monev_list_page.dart';
+import '../../shared/widgets/app_drawer.dart';
 
 class ShafListPage extends StatelessWidget {
   const ShafListPage({super.key});
@@ -18,11 +16,12 @@ class ShafListPage extends StatelessWidget {
     final c = Get.find<ShafController>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Shaf')),
-      drawer: _buildAppDrawer(),
+      appBar: AppBar(title: const Text('Bengkel')),
+      drawer: const AppDrawer(selectedItem: DrawerItem.shaf),
       body: Obx(() {
-        if (c.loading.value)
+        if (c.loading.value) {
           return const Center(child: CircularProgressIndicator());
+        }
         // Show connection error
         if (c.connectionError.value != null) {
           return Center(
@@ -98,7 +97,7 @@ class ShafListPage extends StatelessWidget {
                         children: [
                           // Header
                           Text(
-                            e.asiaName,
+                            e.bengkelName,
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 12),
@@ -108,7 +107,7 @@ class ShafListPage extends StatelessWidget {
                               Expanded(
                                 child: _buildInfoChip(
                                   icon: Icons.business,
-                                  label: e.rakitName,
+                                  label: e.bengkelType.toUpperCase(),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -162,8 +161,8 @@ class ShafListPage extends StatelessWidget {
                                   final ok = await showDialog<bool>(
                                     context: context,
                                     builder: (_) => AlertDialog(
-                                      title: const Text('Hapus Shaf?'),
-                                      content: Text(e.asiaName),
+                                      title: const Text('Hapus Bengkel?'),
+                                      content: Text(e.bengkelName),
                                       actions: [
                                         TextButton(
                                           onPressed: () =>
@@ -263,65 +262,6 @@ Widget _buildClassCard(String className, int count) {
             fontWeight: FontWeight.bold,
             color: Color(0xFF93DA49),
           ),
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _buildAppDrawer() {
-  return Drawer(
-    child: ListView(
-      children: [
-        DrawerHeader(
-          decoration: const BoxDecoration(color: Color(0xFF041E42)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              const Icon(Icons.dashboard, color: Colors.white, size: 32),
-              const SizedBox(height: 12),
-              const Text(
-                'Renja Management',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Management System',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.list, color: Color(0xFF135193)),
-          title: const Text('Renja'),
-          onTap: () => Get.offAll(() => const RenjaListPage()),
-        ),
-        ListTile(
-          leading: const Icon(Icons.group, color: Color(0xFF135193)),
-          title: const Text('Shaf'),
-          onTap: () => Get.back(),
-          selected: true,
-          selectedTileColor: const Color(0xFF135193).withValues(alpha: 0.1),
-        ),
-        ListTile(
-          leading: const Icon(Icons.assessment, color: Color(0xFF135193)),
-          title: const Text('Monev'),
-          onTap: () => Get.offAll(() => const MonevListPage()),
-        ),
-        const Divider(height: 24),
-        ListTile(
-          leading: const Icon(Icons.settings, color: Color(0xFF8D949B)),
-          title: const Text('Settings'),
-          onTap: () => Get.back(),
         ),
       ],
     ),

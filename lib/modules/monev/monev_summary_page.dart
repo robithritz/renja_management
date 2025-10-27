@@ -143,7 +143,7 @@ class MonevSummaryPage extends StatelessWidget {
                             ...shafs.map(
                               (s) => DropdownMenuItem(
                                 value: s.uuid,
-                                child: Text('${s.asiaName} — ${s.rakitName}'),
+                                child: Text(s.bengkelName),
                               ),
                             ),
                           ],

@@ -16,6 +16,8 @@ class ShafController extends GetxController {
   ShafController(this._repo);
   final ShafApiRepository _repo;
 
+  ShafApiRepository get repo => _repo;
+
   final items = <ShafEntity>[].obs;
   final loading = false.obs;
   final loadingMore = false.obs;
@@ -83,8 +85,10 @@ class ShafController extends GetxController {
   }
 
   Future<void> create({
-    required String asiaName,
-    required String rakitName,
+    required String bengkelName,
+    required String bengkelType,
+    String? asiaUuid,
+    String? centralUuid,
     required int totalPu,
     required int totalClassA,
     required int totalClassB,
@@ -94,8 +98,10 @@ class ShafController extends GetxController {
     final now = DateTime.now().toIso8601String();
     final e = ShafEntity(
       uuid: const Uuid().v4(),
-      asiaName: asiaName,
-      rakitName: rakitName,
+      bengkelName: bengkelName,
+      bengkelType: bengkelType,
+      asiaUuid: asiaUuid,
+      centralUuid: centralUuid,
       totalPu: totalPu,
       totalClassA: totalClassA,
       totalClassB: totalClassB,

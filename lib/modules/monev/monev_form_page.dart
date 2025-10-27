@@ -115,8 +115,8 @@ class _MonevFormPageState extends State<MonevFormPage> {
               ? _shafList.first
               : ShafEntity(
                   uuid: '',
-                  asiaName: '',
-                  rakitName: '',
+                  bengkelName: '',
+                  bengkelType: 'rakit',
                   totalPu: 0,
                   totalClassA: 0,
                   totalClassB: 0,
@@ -219,7 +219,7 @@ class _MonevFormPageState extends State<MonevFormPage> {
                       .map(
                         (s) => DropdownMenuItem(
                           value: s.uuid,
-                          child: Text('${s.asiaName} — ${s.rakitName}'),
+                          child: Text(s.bengkelName),
                         ),
                       )
                       .toList(),
@@ -232,8 +232,8 @@ class _MonevFormPageState extends State<MonevFormPage> {
                             ? _shafList.first
                             : ShafEntity(
                                 uuid: '',
-                                asiaName: '',
-                                rakitName: '',
+                                bengkelName: '',
+                                bengkelType: 'rakit',
                                 totalPu: 0,
                                 totalClassA: 0,
                                 totalClassB: 0,
