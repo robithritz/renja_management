@@ -183,11 +183,20 @@ class MonevController extends GetxController {
         ? monevList.first.weekNumber
         : monevList.map((m) => m.weekNumber).reduce((a, b) => a > b ? a : b);
 
-    // Get bengkel name from shaf data in the response
+    // Get bengkel name from selected bengkel or shaf data
     String? bengkelName;
-    if (selectedBengkelUuid.value != null && shafMap.isNotEmpty) {
-      // Get the first shaf's bengkel name from the response
-      bengkelName = shafMap.values.first.bengkelName;
+    if (selectedBengkelUuid.value != null) {
+      // Get the selected bengkel from bengkelList
+      final selectedBengkel = bengkelList.firstWhereOrNull(
+        (b) => b.uuid == selectedBengkelUuid.value,
+      );
+      if (selectedBengkel != null) {
+        // Use the selected bengkel's name
+        bengkelName = selectedBengkel.bengkelName;
+      } else if (shafMap.isNotEmpty) {
+        // Fallback to first shaf's bengkel name if not found in list
+        bengkelName = shafMap.values.first.bengkelName;
+      }
     }
 
     return MonevSummary(

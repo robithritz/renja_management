@@ -1071,22 +1071,37 @@ class MonevSummaryPage extends StatelessWidget {
         : '0.0';
 
     // Get shaf name if single shaf is selected
-    final shafInfo = summary.shafUuid != null
-        ? '\n🏢 *Shaf:* ${summary.shafName}'
-        : '';
+    // For non-rakit bengkels, show the parent bengkel name instead of child shaf
+    String shafInfo = '';
+    if (summary.shafUuid != null) {
+      final c = Get.find<MonevController>();
+      final selectedBengkel = c.bengkelList.firstWhereOrNull(
+        (b) => b.uuid == summary.shafUuid,
+      );
+      if (selectedBengkel != null && selectedBengkel.bengkelType != 'rakit') {
+        // For non-rakit bengkels, show the parent bengkel name
+        shafInfo = '\n🏢 *Bengkel:* ${selectedBengkel.bengkelName}';
+      } else {
+        // For rakit bengkels, show the shaf name
+        shafInfo = '\n🏢 *Shaf:* ${summary.shafName}';
+      }
+    }
 
     // Build narasi sections if available
-    final malNarasi =
-        summary.narrationMal != null && summary.narrationMal!.isNotEmpty
-        ? '\n\n📝 *Narasi MAL:*\n${summary.narrationMal}'
+    final malNarasi = (shafNarrations == null || shafNarrations.isEmpty)
+        ? (summary.narrationMal != null && summary.narrationMal!.isNotEmpty
+              ? '\n\n📝 *Narasi MAL:*\n${summary.narrationMal}'
+              : '')
         : '';
-    final bnNarasi =
-        summary.narrationBn != null && summary.narrationBn!.isNotEmpty
-        ? '\n\n📝 *Narasi BN:*\n${summary.narrationBn}'
+    final bnNarasi = (shafNarrations == null || shafNarrations.isEmpty)
+        ? (summary.narrationBn != null && summary.narrationBn!.isNotEmpty
+              ? '\n\n📝 *Narasi BN:*\n${summary.narrationBn}'
+              : '')
         : '';
-    final dkwNarasi =
-        summary.narrationDkw != null && summary.narrationDkw!.isNotEmpty
-        ? '\n\n📝 *Narasi DKW:*\n${summary.narrationDkw}'
+    final dkwNarasi = (shafNarrations == null || shafNarrations.isEmpty)
+        ? (summary.narrationDkw != null && summary.narrationDkw!.isNotEmpty
+              ? '\n\n📝 *Narasi DKW:*\n${summary.narrationDkw}'
+              : '')
         : '';
 
     // Build shaf narrations section if available (for "semua shaf" view)
