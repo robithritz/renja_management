@@ -1390,116 +1390,142 @@ bool _isDatePassed(String dateStr) {
   }
 }
 
-Future<void> _showTergelarDialog(BuildContext context, Renja renja) async {
+// GetX Controller for Tergelar Dialog
+class _TergelarDialogController extends GetxController {
+  final showReasonField = false.obs;
   final reasonCtrl = TextEditingController();
-  bool showReasonField = false;
+
+  void toggleReasonField() {
+    showReasonField.toggle();
+  }
+
+  @override
+  void onClose() {
+    reasonCtrl.dispose();
+    super.onClose();
+  }
+}
+
+Future<void> _showTergelarDialog(BuildContext context, Renja renja) async {
+  final controller = Get.put(_TergelarDialogController());
 
   await showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setState) => AlertDialog(
-        title: const Text('Set Tergelar Status'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                renja.kegiatanDesc,
-                style: Theme.of(ctx).textTheme.titleSmall,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 16),
-              if (!showReasonField) ...[
-                const Text('Select status:'),
-                const SizedBox(height: 12),
-                // Tergelar button
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    icon: const Icon(Icons.check_circle),
-                    label: const Text('Tergelar'),
-                    onPressed: () async {
-                      final updated = renja.copyWith(
-                        isTergelar: true,
-                        reasonTidakTergelar: null,
-                      );
-                      final c = Get.find<RenjaController>();
-                      await c.updateItem(updated);
-                      if (ctx.mounted) Navigator.pop(ctx);
-                    },
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // Tidak Tergelar button
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    icon: const Icon(Icons.cancel),
-                    label: const Text('Tidak Tergelar'),
-                    onPressed: () {
-                      setState(() {
-                        showReasonField = true;
-                      });
-                    },
-                  ),
-                ),
-              ] else ...[
-                const Text('Reason for not completed:'),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: reasonCtrl,
-                  maxLines: 3,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    hintText: 'Enter reason...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+    builder: (ctx) => AlertDialog(
+      title: const Text('Set Tergelar Status'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              renja.kegiatanDesc,
+              style: Theme.of(ctx).textTheme.titleSmall,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 16),
+            Obx(
+              () => !controller.showReasonField.value
+                  ? Column(
+                      children: [
+                        const Text('Select status:'),
+                        const SizedBox(height: 12),
+                        // Tergelar button
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            icon: const Icon(Icons.check_circle),
+                            label: const Text('Tergelar'),
+                            onPressed: () async {
+                              final updated = renja.copyWith(
+                                isTergelar: true,
+                                reasonTidakTergelar: null,
+                              );
+                              final c = Get.find<RenjaController>();
+                              await c.updateItem(updated);
+                              if (ctx.mounted) Navigator.pop(ctx);
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // Tidak Tergelar button
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            icon: const Icon(Icons.cancel),
+                            label: const Text('Tidak Tergelar'),
+                            onPressed: () {
+                              controller.toggleReasonField();
+                            },
+                          ),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        const Text('Reason for not completed:'),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: controller.reasonCtrl,
+                          maxLines: 3,
+                          autofocus: true,
+                          decoration: InputDecoration(
+                            hintText: 'Enter reason...',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            contentPadding: const EdgeInsets.all(12),
+                          ),
+                        ),
+                      ],
                     ),
-                    contentPadding: const EdgeInsets.all(12),
-                  ),
-                ),
-              ],
-            ],
-          ),
+            ),
+          ],
         ),
-        actions: [
-          if (showReasonField)
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  showReasonField = false;
-                });
-              },
-              child: const Text('Back'),
-            ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          if (showReasonField)
-            FilledButton(
-              onPressed: () async {
-                if (reasonCtrl.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(ctx).showSnackBar(
-                    const SnackBar(content: Text('Please enter a reason')),
-                  );
-                  return;
-                }
-                final updated = renja.copyWith(
-                  isTergelar: false,
-                  reasonTidakTergelar: reasonCtrl.text.trim(),
-                );
-                final c = Get.find<RenjaController>();
-                await c.updateItem(updated);
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-              child: const Text('Save'),
-            ),
-        ],
       ),
+      actions: [
+        Obx(
+          () => controller.showReasonField.value
+              ? TextButton(
+                  onPressed: () {
+                    controller.toggleReasonField();
+                  },
+                  child: const Text('Back'),
+                )
+              : const SizedBox.shrink(),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Cancel'),
+        ),
+        Obx(
+          () => controller.showReasonField.value
+              ? FilledButton(
+                  onPressed: () async {
+                    if (controller.reasonCtrl.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        const SnackBar(content: Text('Please enter a reason')),
+                      );
+                      return;
+                    }
+                    final updated = renja.copyWith(
+                      isTergelar: false,
+                      reasonTidakTergelar: controller.reasonCtrl.text.trim(),
+                    );
+                    final c = Get.find<RenjaController>();
+                    await c.updateItem(updated);
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  },
+                  child: const Text('Save'),
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
     ),
   );
+
+  // Clean up the controller when dialog is closed
+  Get.delete<_TergelarDialogController>();
 }

@@ -1,0 +1,520 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
+import '../../data/models/monev.dart';
+import '../../shared/enums/hijriah_month.dart';
+import 'monev_controller.dart';
+import '../../data/repositories/shaf_api_repository.dart';
+import '../../data/models/shaf_entity.dart';
+
+// GetX Controller for Monev Form
+class MonevFormController extends GetxController {
+  final Monev? initial;
+  MonevFormController({this.initial});
+
+  final formKey = GlobalKey<FormState>();
+
+  final bulan = Rx<HijriahMonth>(HijriahMonth.muharram);
+  final tahun = TextEditingController(text: '1447');
+  final week = Rx<int>(1);
+  final selectedShafUuid = Rxn<String>();
+  final selectedShaf = Rxn<ShafEntity>();
+  final shafList = Rx<List<ShafEntity>>([]);
+
+  final malPu = TextEditingController(text: '0');
+  final malA = TextEditingController(text: '0');
+  final malB = TextEditingController(text: '0');
+  final malC = TextEditingController(text: '0');
+  final malD = TextEditingController(text: '0');
+  final nomMal = TextEditingController(text: '0');
+
+  final bnPu = TextEditingController(text: '0');
+  final bnA = TextEditingController(text: '0');
+  final bnB = TextEditingController(text: '0');
+  final bnC = TextEditingController(text: '0');
+  final bnD = TextEditingController(text: '0');
+
+  final newMember = TextEditingController(text: '0');
+  final kdpu = TextEditingController(text: '0');
+
+  final narrationMal = TextEditingController();
+  final narrationBn = TextEditingController();
+  final narrationDkw = TextEditingController();
+
+  @override
+  void onInit() {
+    super.onInit();
+    _initializeFormData();
+    _attachPctListeners();
+    _loadShaf();
+  }
+
+  void _initializeFormData() {
+    final e = initial;
+    if (e != null) {
+      bulan.value = e.bulanHijriah;
+      tahun.text = e.tahunHijriah.toString();
+      week.value = e.weekNumber;
+      selectedShafUuid.value = e.shafUuid;
+      malPu.text = e.activeMalPu.toString();
+      malA.text = e.activeMalClassA.toString();
+      malB.text = e.activeMalClassB.toString();
+      malC.text = e.activeMalClassC.toString();
+      malD.text = e.activeMalClassD.toString();
+      nomMal.text = e.nominalMal.toString();
+      bnPu.text = e.activeBnPu.toString();
+      bnA.text = e.activeBnClassA.toString();
+      bnB.text = e.activeBnClassB.toString();
+      bnC.text = e.activeBnClassC.toString();
+      bnD.text = e.activeBnClassD.toString();
+      newMember.text = e.totalNewMember.toString();
+      kdpu.text = e.totalKdpu.toString();
+      narrationMal.text = e.narrationMal ?? '';
+      narrationBn.text = e.narrationBn ?? '';
+      narrationDkw.text = e.narrationDkw ?? '';
+    }
+  }
+
+  @override
+  void onClose() {
+    tahun.dispose();
+    malPu.dispose();
+    malA.dispose();
+    malB.dispose();
+    malC.dispose();
+    malD.dispose();
+    nomMal.dispose();
+    bnPu.dispose();
+    bnA.dispose();
+    bnB.dispose();
+    bnC.dispose();
+    bnD.dispose();
+    newMember.dispose();
+    kdpu.dispose();
+    narrationMal.dispose();
+    narrationBn.dispose();
+    narrationDkw.dispose();
+    super.onClose();
+  }
+
+  Future<void> _loadShaf() async {
+    try {
+      final repo = Get.isRegistered<ShafApiRepository>()
+          ? Get.find<ShafApiRepository>()
+          : Get.put(ShafApiRepository(), permanent: true);
+      final response = await repo.getAll(bengkelType: 'rakit');
+      final list = response['data'] as List<ShafEntity>;
+      shafList.value = list;
+      if (selectedShafUuid.value != null) {
+        selectedShaf.value = shafList.value.firstWhereOrNull(
+          (s) => s.uuid == selectedShafUuid.value,
+        );
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to load shaf list: $e');
+      shafList.value = [];
+    }
+  }
+
+  void _attachPctListeners() {
+    for (final c in [
+      malPu,
+      malA,
+      malB,
+      malC,
+      malD,
+      bnPu,
+      bnA,
+      bnB,
+      bnC,
+      bnD,
+      newMember,
+      kdpu,
+    ]) {
+      c.addListener(() {
+        update();
+      });
+    }
+  }
+
+  String fmtPct(int num, int? denom) {
+    if (denom == null || denom <= 0) return '-';
+    final v = (num / denom) * 100;
+    return '${v.toStringAsFixed(1)}%';
+  }
+
+  int val(TextEditingController c) => int.tryParse(c.text) ?? 0;
+
+  Widget numWithPct(TextEditingController c, String label, int? denom) {
+    return Row(
+      children: [
+        Expanded(child: numField(c, label)),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 64,
+          child: Text(fmtPct(val(c), denom), textAlign: TextAlign.right),
+        ),
+      ],
+    );
+  }
+}
+
+class MonevFormPage extends StatelessWidget {
+  const MonevFormPage({super.key, this.initial});
+  final Monev? initial;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.put(MonevFormController(initial: initial));
+    final c = Get.find<MonevController>();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(initial == null ? 'Tambah Monev' : 'Edit Monev'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 8.0),
+                Column(
+                  children: [
+                    _bulanDropdown(),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _tahun,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Tahun Hijriah',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Wajib diisi' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    _weekDropdown(),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _selectedShafUuid,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Shaf',
+                    border: OutlineInputBorder(),
+                  ),
+                  hint: const Text('Pilih Shaf'),
+                  items: _shafList
+                      .map(
+                        (s) => DropdownMenuItem(
+                          value: s.uuid,
+                          child: Text(s.bengkelName),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) {
+                    setState(() {
+                      _selectedShafUuid = v;
+                      _selectedShaf = _shafList.firstWhere(
+                        (s) => s.uuid == v,
+                        orElse: () => _shafList.isNotEmpty
+                            ? _shafList.first
+                            : ShafEntity(
+                                uuid: '',
+                                bengkelName: '',
+                                bengkelType: 'rakit',
+                                totalPu: 0,
+                                totalClassA: 0,
+                                totalClassB: 0,
+                                totalClassC: 0,
+                                totalClassD: 0,
+                                createdAt: '',
+                                updatedAt: '',
+                              ),
+                      );
+                      if (_selectedShaf!.uuid.isEmpty) _selectedShaf = null;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                const Text('MAL'),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _numWithPct(
+                        _malPu,
+                        'PU Aktif',
+                        _selectedShaf?.totalPu,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _numWithPct(
+                        _malA,
+                        'Kelas A',
+                        _selectedShaf?.totalClassA,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _numWithPct(
+                        _malB,
+                        'Kelas B',
+                        _selectedShaf?.totalClassB,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _numWithPct(
+                        _malC,
+                        'Kelas C',
+                        _selectedShaf?.totalClassC,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _numWithPct(
+                        _malD,
+                        'Kelas D',
+                        _selectedShaf?.totalClassD,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(child: _numField(_nomMal, 'Nominal (Rp)')),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _narrationMal,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Narasi MAL',
+                    hintText: 'Catatan atau narasi untuk MAL...',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text('BN'),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _numWithPct(
+                        _bnPu,
+                        'PU Aktif',
+                        _selectedShaf?.totalPu,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _numWithPct(
+                        _bnA,
+                        'Kelas A',
+                        _selectedShaf?.totalClassA,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _numWithPct(
+                        _bnB,
+                        'Kelas B',
+                        _selectedShaf?.totalClassB,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _numWithPct(
+                        _bnC,
+                        'Kelas C',
+                        _selectedShaf?.totalClassC,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _numWithPct(
+                        _bnD,
+                        'Kelas D',
+                        _selectedShaf?.totalClassD,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _narrationBn,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Narasi BN',
+                    hintText: 'Catatan atau narasi untuk BN...',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text('DKW'),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(child: _numField(_kdpu, 'Total KDPU')),
+                    const SizedBox(width: 6),
+                    Expanded(child: _numField(_newMember, 'New Member')),
+                    // const Expanded(child: SizedBox.shrink()),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _narrationDkw,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Narasi DKW',
+                    hintText: 'Catatan atau narasi untuk DKW...',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Batal'),
+                    ),
+                    const Spacer(),
+                    FilledButton.icon(
+                      onPressed: () async {
+                        if (!_formKey.currentState!.validate()) return;
+                        if (widget.initial == null) {
+                          await c.create(
+                            shafUuid: _selectedShafUuid,
+                            bulanHijriah: _bulan,
+                            tahunHijriah: int.tryParse(_tahun.text) ?? 0,
+                            weekNumber: _week,
+                            activeMalPu: int.tryParse(_malPu.text) ?? 0,
+                            activeMalClassA: int.tryParse(_malA.text) ?? 0,
+                            activeMalClassB: int.tryParse(_malB.text) ?? 0,
+                            activeMalClassC: int.tryParse(_malC.text) ?? 0,
+                            activeMalClassD: int.tryParse(_malD.text) ?? 0,
+                            nominalMal: int.tryParse(_nomMal.text) ?? 0,
+                            activeBnPu: int.tryParse(_bnPu.text) ?? 0,
+                            activeBnClassA: int.tryParse(_bnA.text) ?? 0,
+                            activeBnClassB: int.tryParse(_bnB.text) ?? 0,
+                            activeBnClassC: int.tryParse(_bnC.text) ?? 0,
+                            activeBnClassD: int.tryParse(_bnD.text) ?? 0,
+                            totalNewMember: int.tryParse(_newMember.text) ?? 0,
+                            totalKdpu: int.tryParse(_kdpu.text) ?? 0,
+                            narrationMal: _narrationMal.text.trim().isEmpty
+                                ? null
+                                : _narrationMal.text.trim(),
+                            narrationBn: _narrationBn.text.trim().isEmpty
+                                ? null
+                                : _narrationBn.text.trim(),
+                            narrationDkw: _narrationDkw.text.trim().isEmpty
+                                ? null
+                                : _narrationDkw.text.trim(),
+                          );
+                        } else {
+                          await c.updateItem(
+                            widget.initial!.copyWith(
+                              shafUuid: _selectedShafUuid,
+                              bulanHijriah: _bulan,
+                              tahunHijriah: int.tryParse(_tahun.text) ?? 0,
+                              weekNumber: _week,
+                              activeMalPu: int.tryParse(_malPu.text) ?? 0,
+                              activeMalClassA: int.tryParse(_malA.text) ?? 0,
+                              activeMalClassB: int.tryParse(_malB.text) ?? 0,
+                              activeMalClassC: int.tryParse(_malC.text) ?? 0,
+                              activeMalClassD: int.tryParse(_malD.text) ?? 0,
+                              nominalMal: int.tryParse(_nomMal.text) ?? 0,
+                              activeBnPu: int.tryParse(_bnPu.text) ?? 0,
+                              activeBnClassA: int.tryParse(_bnA.text) ?? 0,
+                              activeBnClassB: int.tryParse(_bnB.text) ?? 0,
+                              activeBnClassC: int.tryParse(_bnC.text) ?? 0,
+                              activeBnClassD: int.tryParse(_bnD.text) ?? 0,
+                              totalNewMember:
+                                  int.tryParse(_newMember.text) ?? 0,
+                              totalKdpu: int.tryParse(_kdpu.text) ?? 0,
+                              narrationMal: _narrationMal.text.trim().isEmpty
+                                  ? null
+                                  : _narrationMal.text.trim(),
+                              narrationBn: _narrationBn.text.trim().isEmpty
+                                  ? null
+                                  : _narrationBn.text.trim(),
+                              narrationDkw: _narrationDkw.text.trim().isEmpty
+                                  ? null
+                                  : _narrationDkw.text.trim(),
+                            ),
+                          );
+                        }
+                        if (context.mounted) Navigator.pop(context);
+                      },
+                      icon: const Icon(Icons.save),
+                      label: const Text('Simpan'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _bulanDropdown() {
+    return DropdownButtonFormField<HijriahMonth>(
+      value: _bulan,
+      decoration: const InputDecoration(
+        labelText: 'Bulan Hijriah',
+        border: OutlineInputBorder(),
+      ),
+      items: HijriahMonth.values
+          .map((e) => DropdownMenuItem(value: e, child: Text(e.asString)))
+          .toList(),
+      onChanged: (v) => setState(() => _bulan = v ?? _bulan),
+    );
+  }
+
+  Widget _weekDropdown() {
+    return DropdownButtonFormField<int>(
+      value: _week,
+      decoration: const InputDecoration(
+        labelText: 'Pekan Ke-',
+        border: OutlineInputBorder(),
+      ),
+      items: const [1, 2, 3, 4]
+          .map((e) => DropdownMenuItem(value: e, child: Text('Pekan $e')))
+          .toList(),
+      onChanged: (v) => setState(() => _week = v ?? _week),
+    );
+  }
+
+  Widget _numField(TextEditingController c, String label) {
+    return TextFormField(
+      controller: c,
+      keyboardType: TextInputType.number,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+    );
+  }
+}

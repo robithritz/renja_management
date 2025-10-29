@@ -7,97 +7,94 @@ import 'monev_controller.dart';
 import '../../data/repositories/shaf_api_repository.dart';
 import '../../data/models/shaf_entity.dart';
 
-class MonevFormPage extends StatefulWidget {
-  const MonevFormPage({super.key, this.initial});
+// GetX Controller for Monev Form
+class MonevFormController extends GetxController {
   final Monev? initial;
+  MonevFormController({this.initial});
+
+  final formKey = GlobalKey<FormState>();
+
+  final bulan = Rx<HijriahMonth>(HijriahMonth.muharram);
+  final tahun = TextEditingController(text: '1447');
+  final week = Rx<int>(1);
+  final selectedShafUuid = Rxn<String>();
+  final selectedShaf = Rxn<ShafEntity>();
+  final shafList = Rx<List<ShafEntity>>([]);
+
+  final malPu = TextEditingController(text: '0');
+  final malA = TextEditingController(text: '0');
+  final malB = TextEditingController(text: '0');
+  final malC = TextEditingController(text: '0');
+  final malD = TextEditingController(text: '0');
+  final nomMal = TextEditingController(text: '0');
+
+  final bnPu = TextEditingController(text: '0');
+  final bnA = TextEditingController(text: '0');
+  final bnB = TextEditingController(text: '0');
+  final bnC = TextEditingController(text: '0');
+  final bnD = TextEditingController(text: '0');
+
+  final newMember = TextEditingController(text: '0');
+  final kdpu = TextEditingController(text: '0');
+
+  final narrationMal = TextEditingController();
+  final narrationBn = TextEditingController();
+  final narrationDkw = TextEditingController();
 
   @override
-  State<MonevFormPage> createState() => _MonevFormPageState();
-}
-
-class _MonevFormPageState extends State<MonevFormPage> {
-  final _formKey = GlobalKey<FormState>();
-
-  HijriahMonth _bulan = HijriahMonth.muharram;
-  final _tahun = TextEditingController(text: '1447');
-  int _week = 1;
-  String? _selectedShafUuid;
-  ShafEntity? _selectedShaf;
-  List<ShafEntity> _shafList = [];
-
-  final _malPu = TextEditingController(text: '0');
-  final _malA = TextEditingController(text: '0');
-  final _malB = TextEditingController(text: '0');
-  final _malC = TextEditingController(text: '0');
-  final _malD = TextEditingController(text: '0');
-  final _nomMal = TextEditingController(text: '0');
-
-  final _bnPu = TextEditingController(text: '0');
-  final _bnA = TextEditingController(text: '0');
-  final _bnB = TextEditingController(text: '0');
-  final _bnC = TextEditingController(text: '0');
-  final _bnD = TextEditingController(text: '0');
-
-  final _newMember = TextEditingController(text: '0');
-  final _kdpu = TextEditingController(text: '0');
-
-  final _narrationMal = TextEditingController();
-  final _narrationBn = TextEditingController();
-  final _narrationDkw = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    final e = widget.initial;
-    if (e != null) {
-      _bulan = e.bulanHijriah;
-      _tahun.text = e.tahunHijriah.toString();
-      _week = e.weekNumber;
-      _selectedShafUuid = e.shafUuid;
-      _malPu.text = e.activeMalPu.toString();
-      _malA.text = e.activeMalClassA.toString();
-      _malB.text = e.activeMalClassB.toString();
-      _malC.text = e.activeMalClassC.toString();
-      _malD.text = e.activeMalClassD.toString();
-      _nomMal.text = e.nominalMal.toString();
-      _bnPu.text = e.activeBnPu.toString();
-      _bnA.text = e.activeBnClassA.toString();
-      _bnB.text = e.activeBnClassB.toString();
-      _bnC.text = e.activeBnClassC.toString();
-      _bnD.text = e.activeBnClassD.toString();
-      _newMember.text = e.totalNewMember.toString();
-      _kdpu.text = e.totalKdpu.toString();
-      _narrationMal.text = e.narrationMal ?? '';
-      _narrationBn.text = e.narrationBn ?? '';
-      _narrationDkw.text = e.narrationDkw ?? '';
-    }
+  void onInit() {
+    super.onInit();
+    _initializeFormData();
     _attachPctListeners();
-
     _loadShaf();
   }
 
+  void _initializeFormData() {
+    final e = initial;
+    if (e != null) {
+      bulan.value = e.bulanHijriah;
+      tahun.text = e.tahunHijriah.toString();
+      week.value = e.weekNumber;
+      selectedShafUuid.value = e.shafUuid;
+      malPu.text = e.activeMalPu.toString();
+      malA.text = e.activeMalClassA.toString();
+      malB.text = e.activeMalClassB.toString();
+      malC.text = e.activeMalClassC.toString();
+      malD.text = e.activeMalClassD.toString();
+      nomMal.text = e.nominalMal.toString();
+      bnPu.text = e.activeBnPu.toString();
+      bnA.text = e.activeBnClassA.toString();
+      bnB.text = e.activeBnClassB.toString();
+      bnC.text = e.activeBnClassC.toString();
+      bnD.text = e.activeBnClassD.toString();
+      newMember.text = e.totalNewMember.toString();
+      kdpu.text = e.totalKdpu.toString();
+      narrationMal.text = e.narrationMal ?? '';
+      narrationBn.text = e.narrationBn ?? '';
+      narrationDkw.text = e.narrationDkw ?? '';
+    }
+  }
+
   @override
-  void dispose() {
-    _tahun.dispose();
-
-    _malPu.dispose();
-    _malA.dispose();
-    _malB.dispose();
-    _malC.dispose();
-    _malD.dispose();
-    _nomMal.dispose();
-    _bnPu.dispose();
-    _bnA.dispose();
-    _bnB.dispose();
-    _bnC.dispose();
-    _bnD.dispose();
-    _newMember.dispose();
-    _kdpu.dispose();
-    _narrationMal.dispose();
-    _narrationBn.dispose();
-    _narrationDkw.dispose();
-
-    super.dispose();
+  void onClose() {
+    tahun.dispose();
+    malPu.dispose();
+    malA.dispose();
+    malB.dispose();
+    malC.dispose();
+    malD.dispose();
+    nomMal.dispose();
+    bnPu.dispose();
+    bnA.dispose();
+    bnB.dispose();
+    bnC.dispose();
+    bnD.dispose();
+    newMember.dispose();
+    kdpu.dispose();
+    narrationMal.dispose();
+    narrationBn.dispose();
+    narrationDkw.dispose();
+    super.onClose();
   }
 
   Future<void> _loadShaf() async {
@@ -107,101 +104,76 @@ class _MonevFormPageState extends State<MonevFormPage> {
           : Get.put(ShafApiRepository(), permanent: true);
       final response = await repo.getAll(bengkelType: 'rakit');
       final list = response['data'] as List<ShafEntity>;
-      if (!mounted) return;
-      setState(() {
-        _shafList = list;
-        if (_selectedShafUuid != null) {
-          _selectedShaf = _shafList.firstWhere(
-            (s) => s.uuid == _selectedShafUuid,
-            orElse: () => _shafList.isNotEmpty
-                ? _shafList.first
-                : ShafEntity(
-                    uuid: '',
-                    bengkelName: '',
-                    bengkelType: 'rakit',
-                    totalPu: 0,
-                    totalClassA: 0,
-                    totalClassB: 0,
-                    totalClassC: 0,
-                    totalClassD: 0,
-                    createdAt: '',
-                    updatedAt: '',
-                  ),
-          );
-          if (_selectedShaf!.uuid.isEmpty) _selectedShaf = null;
-        }
-      });
+      shafList.value = list;
+      if (selectedShafUuid.value != null) {
+        selectedShaf.value = shafList.value.firstWhereOrNull(
+          (s) => s.uuid == selectedShafUuid.value,
+        );
+      }
     } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _shafList = [];
-      });
+      Get.snackbar('Error', 'Failed to load shaf list: $e');
+      shafList.value = [];
     }
   }
 
   void _attachPctListeners() {
     for (final c in [
-      _malPu,
-      _malA,
-      _malB,
-      _malC,
-      _malD,
-      _bnPu,
-      _bnA,
-      _bnB,
-      _bnC,
-      _bnD,
-      _newMember,
-      _kdpu,
+      malPu,
+      malA,
+      malB,
+      malC,
+      malD,
+      bnPu,
+      bnA,
+      bnB,
+      bnC,
+      bnD,
+      newMember,
+      kdpu,
     ]) {
-      c.addListener(() => setState(() {}));
+      c.addListener(() {
+        update();
+      });
     }
   }
 
-  String _fmtPct(int num, int? denom) {
+  String fmtPct(int num, int? denom) {
     if (denom == null || denom <= 0) return '-';
     final v = (num / denom) * 100;
     return '${v.toStringAsFixed(1)}%';
   }
 
-  int _val(TextEditingController c) => int.tryParse(c.text) ?? 0;
+  int val(TextEditingController c) => int.tryParse(c.text) ?? 0;
+}
 
-  Widget _numWithPct(TextEditingController c, String label, int? denom) {
-    return Row(
-      children: [
-        Expanded(child: _numField(c, label)),
-        const SizedBox(width: 8),
-        SizedBox(
-          width: 64,
-          child: Text(_fmtPct(_val(c), denom), textAlign: TextAlign.right),
-        ),
-      ],
-    );
-  }
+class MonevFormPage extends StatelessWidget {
+  const MonevFormPage({super.key, this.initial});
+  final Monev? initial;
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.put(MonevFormController(initial: initial));
     final c = Get.find<MonevController>();
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.initial == null ? 'Tambah Monev' : 'Edit Monev'),
+        title: Text(initial == null ? 'Tambah Monev' : 'Edit Monev'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
-          key: _formKey,
+          key: controller.formKey,
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: 8.0),
+                const SizedBox(height: 8.0),
                 Column(
                   children: [
-                    _bulanDropdown(),
+                    _bulanDropdown(controller),
                     const SizedBox(height: 12),
                     TextFormField(
-                      controller: _tahun,
+                      controller: controller.tahun,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
                         labelText: 'Tahun Hijriah',
@@ -211,280 +183,318 @@ class _MonevFormPageState extends State<MonevFormPage> {
                           (v == null || v.isEmpty) ? 'Wajib diisi' : null,
                     ),
                     const SizedBox(height: 12),
-                    _weekDropdown(),
+                    _weekDropdown(controller),
                   ],
                 ),
                 const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: _selectedShafUuid,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Shaf',
-                    border: OutlineInputBorder(),
+                Obx(
+                  () => DropdownButtonFormField<String>(
+                    value: controller.selectedShafUuid.value,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Shaf',
+                      border: OutlineInputBorder(),
+                    ),
+                    hint: const Text('Pilih Shaf'),
+                    items: controller.shafList.value
+                        .map(
+                          (s) => DropdownMenuItem(
+                            value: s.uuid,
+                            child: Text(s.bengkelName),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) {
+                      controller.selectedShafUuid.value = v;
+                      if (v != null) {
+                        controller.selectedShaf.value = controller
+                            .shafList
+                            .value
+                            .firstWhereOrNull((s) => s.uuid == v);
+                      }
+                    },
                   ),
-                  hint: const Text('Pilih Shaf'),
-                  items: _shafList
-                      .map(
-                        (s) => DropdownMenuItem(
-                          value: s.uuid,
-                          child: Text(s.bengkelName),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (v) {
-                    setState(() {
-                      _selectedShafUuid = v;
-                      _selectedShaf = _shafList.firstWhere(
-                        (s) => s.uuid == v,
-                        orElse: () => _shafList.isNotEmpty
-                            ? _shafList.first
-                            : ShafEntity(
-                                uuid: '',
-                                bengkelName: '',
-                                bengkelType: 'rakit',
-                                totalPu: 0,
-                                totalClassA: 0,
-                                totalClassB: 0,
-                                totalClassC: 0,
-                                totalClassD: 0,
-                                createdAt: '',
-                                updatedAt: '',
-                              ),
-                      );
-                      if (_selectedShaf!.uuid.isEmpty) _selectedShaf = null;
-                    });
-                  },
                 ),
                 const SizedBox(height: 16),
                 const Text('MAL'),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _numWithPct(
-                        _malPu,
-                        'PU Aktif',
-                        _selectedShaf?.totalPu,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _numWithPct(
-                        _malA,
-                        'Kelas A',
-                        _selectedShaf?.totalClassA,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _numWithPct(
-                        _malB,
-                        'Kelas B',
-                        _selectedShaf?.totalClassB,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _numWithPct(
-                        _malC,
-                        'Kelas C',
-                        _selectedShaf?.totalClassC,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _numWithPct(
-                        _malD,
-                        'Kelas D',
-                        _selectedShaf?.totalClassD,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(child: _numField(_nomMal, 'Nominal (Rp)')),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _narrationMal,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Narasi MAL',
-                    hintText: 'Catatan atau narasi untuk MAL...',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text('BN'),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _numWithPct(
-                        _bnPu,
-                        'PU Aktif',
-                        _selectedShaf?.totalPu,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _numWithPct(
-                        _bnA,
-                        'Kelas A',
-                        _selectedShaf?.totalClassA,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _numWithPct(
-                        _bnB,
-                        'Kelas B',
-                        _selectedShaf?.totalClassB,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _numWithPct(
-                        _bnC,
-                        'Kelas C',
-                        _selectedShaf?.totalClassC,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _numWithPct(
-                        _bnD,
-                        'Kelas D',
-                        _selectedShaf?.totalClassD,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _narrationBn,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Narasi BN',
-                    hintText: 'Catatan atau narasi untuk BN...',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text('DKW'),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(child: _numField(_kdpu, 'Total KDPU')),
-                    const SizedBox(width: 6),
-                    Expanded(child: _numField(_newMember, 'New Member')),
-                    // const Expanded(child: SizedBox.shrink()),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _narrationDkw,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Narasi DKW',
-                    hintText: 'Catatan atau narasi untuk DKW...',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Batal'),
-                    ),
-                    const Spacer(),
-                    FilledButton.icon(
-                      onPressed: () async {
-                        if (!_formKey.currentState!.validate()) return;
-                        if (widget.initial == null) {
-                          await c.create(
-                            shafUuid: _selectedShafUuid,
-                            bulanHijriah: _bulan,
-                            tahunHijriah: int.tryParse(_tahun.text) ?? 0,
-                            weekNumber: _week,
-                            activeMalPu: int.tryParse(_malPu.text) ?? 0,
-                            activeMalClassA: int.tryParse(_malA.text) ?? 0,
-                            activeMalClassB: int.tryParse(_malB.text) ?? 0,
-                            activeMalClassC: int.tryParse(_malC.text) ?? 0,
-                            activeMalClassD: int.tryParse(_malD.text) ?? 0,
-                            nominalMal: int.tryParse(_nomMal.text) ?? 0,
-                            activeBnPu: int.tryParse(_bnPu.text) ?? 0,
-                            activeBnClassA: int.tryParse(_bnA.text) ?? 0,
-                            activeBnClassB: int.tryParse(_bnB.text) ?? 0,
-                            activeBnClassC: int.tryParse(_bnC.text) ?? 0,
-                            activeBnClassD: int.tryParse(_bnD.text) ?? 0,
-                            totalNewMember: int.tryParse(_newMember.text) ?? 0,
-                            totalKdpu: int.tryParse(_kdpu.text) ?? 0,
-                            narrationMal: _narrationMal.text.trim().isEmpty
-                                ? null
-                                : _narrationMal.text.trim(),
-                            narrationBn: _narrationBn.text.trim().isEmpty
-                                ? null
-                                : _narrationBn.text.trim(),
-                            narrationDkw: _narrationDkw.text.trim().isEmpty
-                                ? null
-                                : _narrationDkw.text.trim(),
-                          );
-                        } else {
-                          await c.updateItem(
-                            widget.initial!.copyWith(
-                              shafUuid: _selectedShafUuid,
-                              bulanHijriah: _bulan,
-                              tahunHijriah: int.tryParse(_tahun.text) ?? 0,
-                              weekNumber: _week,
-                              activeMalPu: int.tryParse(_malPu.text) ?? 0,
-                              activeMalClassA: int.tryParse(_malA.text) ?? 0,
-                              activeMalClassB: int.tryParse(_malB.text) ?? 0,
-                              activeMalClassC: int.tryParse(_malC.text) ?? 0,
-                              activeMalClassD: int.tryParse(_malD.text) ?? 0,
-                              nominalMal: int.tryParse(_nomMal.text) ?? 0,
-                              activeBnPu: int.tryParse(_bnPu.text) ?? 0,
-                              activeBnClassA: int.tryParse(_bnA.text) ?? 0,
-                              activeBnClassB: int.tryParse(_bnB.text) ?? 0,
-                              activeBnClassC: int.tryParse(_bnC.text) ?? 0,
-                              activeBnClassD: int.tryParse(_bnD.text) ?? 0,
-                              totalNewMember:
-                                  int.tryParse(_newMember.text) ?? 0,
-                              totalKdpu: int.tryParse(_kdpu.text) ?? 0,
-                              narrationMal: _narrationMal.text.trim().isEmpty
-                                  ? null
-                                  : _narrationMal.text.trim(),
-                              narrationBn: _narrationBn.text.trim().isEmpty
-                                  ? null
-                                  : _narrationBn.text.trim(),
-                              narrationDkw: _narrationDkw.text.trim().isEmpty
-                                  ? null
-                                  : _narrationDkw.text.trim(),
+                GetBuilder<MonevFormController>(
+                  builder: (ctrl) => Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _numWithPct(
+                              ctrl.malPu,
+                              'PU Aktif',
+                              ctrl.selectedShaf.value?.totalPu,
+                              ctrl,
                             ),
-                          );
-                        }
-                        if (context.mounted) Navigator.pop(context);
-                      },
-                      icon: const Icon(Icons.save),
-                      label: const Text('Simpan'),
-                    ),
-                  ],
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _numWithPct(
+                              ctrl.malA,
+                              'Kelas A',
+                              ctrl.selectedShaf.value?.totalClassA,
+                              ctrl,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _numWithPct(
+                              ctrl.malB,
+                              'Kelas B',
+                              ctrl.selectedShaf.value?.totalClassB,
+                              ctrl,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _numWithPct(
+                              ctrl.malC,
+                              'Kelas C',
+                              ctrl.selectedShaf.value?.totalClassC,
+                              ctrl,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _numWithPct(
+                              ctrl.malD,
+                              'Kelas D',
+                              ctrl.selectedShaf.value?.totalClassD,
+                              ctrl,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _numField(ctrl.nomMal, 'Nominal (Rp)'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: ctrl.narrationMal,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: 'Narasi MAL',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text('BN'),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _numWithPct(
+                              ctrl.bnPu,
+                              'PU Aktif',
+                              ctrl.selectedShaf.value?.totalPu,
+                              ctrl,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _numWithPct(
+                              ctrl.bnA,
+                              'Kelas A',
+                              ctrl.selectedShaf.value?.totalClassA,
+                              ctrl,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _numWithPct(
+                              ctrl.bnB,
+                              'Kelas B',
+                              ctrl.selectedShaf.value?.totalClassB,
+                              ctrl,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _numWithPct(
+                              ctrl.bnC,
+                              'Kelas C',
+                              ctrl.selectedShaf.value?.totalClassC,
+                              ctrl,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _numWithPct(
+                              ctrl.bnD,
+                              'Kelas D',
+                              ctrl.selectedShaf.value?.totalClassD,
+                              ctrl,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(child: SizedBox.shrink()),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: ctrl.narrationBn,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: 'Narasi BN',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _numField(ctrl.newMember, 'Anggota Baru'),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(child: _numField(ctrl.kdpu, 'KDPU')),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: ctrl.narrationDkw,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: 'Narasi DKW',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          OutlinedButton(
+                            onPressed: () => Get.back(),
+                            child: const Text('Batal'),
+                          ),
+                          const Spacer(),
+                          FilledButton.icon(
+                            onPressed: () async {
+                              if (!controller.formKey.currentState!
+                                  .validate()) {
+                                return;
+                              }
+                              if (initial == null) {
+                                await c.create(
+                                  bulanHijriah: ctrl.bulan.value,
+                                  tahunHijriah:
+                                      int.tryParse(ctrl.tahun.text) ?? 1447,
+                                  weekNumber: ctrl.week.value,
+                                  shafUuid: ctrl.selectedShafUuid.value ?? '',
+                                  activeMalPu:
+                                      int.tryParse(ctrl.malPu.text) ?? 0,
+                                  activeMalClassA:
+                                      int.tryParse(ctrl.malA.text) ?? 0,
+                                  activeMalClassB:
+                                      int.tryParse(ctrl.malB.text) ?? 0,
+                                  activeMalClassC:
+                                      int.tryParse(ctrl.malC.text) ?? 0,
+                                  activeMalClassD:
+                                      int.tryParse(ctrl.malD.text) ?? 0,
+                                  nominalMal:
+                                      int.tryParse(ctrl.nomMal.text) ?? 0,
+                                  activeBnPu: int.tryParse(ctrl.bnPu.text) ?? 0,
+                                  activeBnClassA:
+                                      int.tryParse(ctrl.bnA.text) ?? 0,
+                                  activeBnClassB:
+                                      int.tryParse(ctrl.bnB.text) ?? 0,
+                                  activeBnClassC:
+                                      int.tryParse(ctrl.bnC.text) ?? 0,
+                                  activeBnClassD:
+                                      int.tryParse(ctrl.bnD.text) ?? 0,
+                                  totalNewMember:
+                                      int.tryParse(ctrl.newMember.text) ?? 0,
+                                  totalKdpu: int.tryParse(ctrl.kdpu.text) ?? 0,
+                                  narrationMal:
+                                      ctrl.narrationMal.text.trim().isEmpty
+                                      ? null
+                                      : ctrl.narrationMal.text.trim(),
+                                  narrationBn:
+                                      ctrl.narrationBn.text.trim().isEmpty
+                                      ? null
+                                      : ctrl.narrationBn.text.trim(),
+                                  narrationDkw:
+                                      ctrl.narrationDkw.text.trim().isEmpty
+                                      ? null
+                                      : ctrl.narrationDkw.text.trim(),
+                                );
+                              } else {
+                                await c.updateItem(
+                                  initial!.copyWith(
+                                    bulanHijriah: ctrl.bulan.value,
+                                    tahunHijriah:
+                                        int.tryParse(ctrl.tahun.text) ?? 1447,
+                                    weekNumber: ctrl.week.value,
+                                    shafUuid: ctrl.selectedShafUuid.value ?? '',
+                                    activeMalPu:
+                                        int.tryParse(ctrl.malPu.text) ?? 0,
+                                    activeMalClassA:
+                                        int.tryParse(ctrl.malA.text) ?? 0,
+                                    activeMalClassB:
+                                        int.tryParse(ctrl.malB.text) ?? 0,
+                                    activeMalClassC:
+                                        int.tryParse(ctrl.malC.text) ?? 0,
+                                    activeMalClassD:
+                                        int.tryParse(ctrl.malD.text) ?? 0,
+                                    nominalMal:
+                                        int.tryParse(ctrl.nomMal.text) ?? 0,
+                                    activeBnPu:
+                                        int.tryParse(ctrl.bnPu.text) ?? 0,
+                                    activeBnClassA:
+                                        int.tryParse(ctrl.bnA.text) ?? 0,
+                                    activeBnClassB:
+                                        int.tryParse(ctrl.bnB.text) ?? 0,
+                                    activeBnClassC:
+                                        int.tryParse(ctrl.bnC.text) ?? 0,
+                                    activeBnClassD:
+                                        int.tryParse(ctrl.bnD.text) ?? 0,
+                                    totalNewMember:
+                                        int.tryParse(ctrl.newMember.text) ?? 0,
+                                    totalKdpu:
+                                        int.tryParse(ctrl.kdpu.text) ?? 0,
+                                    narrationMal:
+                                        ctrl.narrationMal.text.trim().isEmpty
+                                        ? null
+                                        : ctrl.narrationMal.text.trim(),
+                                    narrationBn:
+                                        ctrl.narrationBn.text.trim().isEmpty
+                                        ? null
+                                        : ctrl.narrationBn.text.trim(),
+                                    narrationDkw:
+                                        ctrl.narrationDkw.text.trim().isEmpty
+                                        ? null
+                                        : ctrl.narrationDkw.text.trim(),
+                                  ),
+                                );
+                              }
+                              Get.back();
+                            },
+                            icon: const Icon(Icons.save),
+                            label: const Text('Simpan'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -494,35 +504,43 @@ class _MonevFormPageState extends State<MonevFormPage> {
     );
   }
 
-  Widget _bulanDropdown() {
-    return DropdownButtonFormField<HijriahMonth>(
-      value: _bulan,
-      decoration: const InputDecoration(
-        labelText: 'Bulan Hijriah',
-        border: OutlineInputBorder(),
+  static Widget _bulanDropdown(MonevFormController controller) {
+    return Obx(
+      () => DropdownButtonFormField<HijriahMonth>(
+        value: controller.bulan.value,
+        decoration: const InputDecoration(
+          labelText: 'Bulan Hijriah',
+          border: OutlineInputBorder(),
+        ),
+        items: HijriahMonth.values
+            .map((e) => DropdownMenuItem(value: e, child: Text(e.asString)))
+            .toList(),
+        onChanged: (v) {
+          if (v != null) controller.bulan.value = v;
+        },
       ),
-      items: HijriahMonth.values
-          .map((e) => DropdownMenuItem(value: e, child: Text(e.asString)))
-          .toList(),
-      onChanged: (v) => setState(() => _bulan = v ?? _bulan),
     );
   }
 
-  Widget _weekDropdown() {
-    return DropdownButtonFormField<int>(
-      value: _week,
-      decoration: const InputDecoration(
-        labelText: 'Pekan Ke-',
-        border: OutlineInputBorder(),
+  static Widget _weekDropdown(MonevFormController controller) {
+    return Obx(
+      () => DropdownButtonFormField<int>(
+        value: controller.week.value,
+        decoration: const InputDecoration(
+          labelText: 'Pekan Ke-',
+          border: OutlineInputBorder(),
+        ),
+        items: const [1, 2, 3, 4]
+            .map((e) => DropdownMenuItem(value: e, child: Text('Pekan $e')))
+            .toList(),
+        onChanged: (v) {
+          if (v != null) controller.week.value = v;
+        },
       ),
-      items: const [1, 2, 3, 4]
-          .map((e) => DropdownMenuItem(value: e, child: Text('Pekan $e')))
-          .toList(),
-      onChanged: (v) => setState(() => _week = v ?? _week),
     );
   }
 
-  Widget _numField(TextEditingController c, String label) {
+  static Widget _numField(TextEditingController c, String label) {
     return TextFormField(
       controller: c,
       keyboardType: TextInputType.number,
@@ -530,6 +548,27 @@ class _MonevFormPageState extends State<MonevFormPage> {
         labelText: label,
         border: const OutlineInputBorder(),
       ),
+    );
+  }
+
+  static Widget _numWithPct(
+    TextEditingController c,
+    String label,
+    int? denom,
+    MonevFormController controller,
+  ) {
+    return Row(
+      children: [
+        Expanded(child: _numField(c, label)),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 64,
+          child: Text(
+            controller.fmtPct(controller.val(c), denom),
+            textAlign: TextAlign.right,
+          ),
+        ),
+      ],
     );
   }
 }
