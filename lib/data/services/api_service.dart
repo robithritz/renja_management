@@ -21,7 +21,7 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:3000/api/v1';
+  static const String baseUrl = 'http://103.103.22.95:3000/api/v1';
   static const Duration timeout = Duration(seconds: 30);
 
   // Helper method for GET requests

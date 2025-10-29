@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Allow cleartext traffic to the API server and emulator -->
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Production server IP -->
+        <domain includeSubdomains="true">103.103.22.95</domain>
+        <!-- Local development -->
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+    </domain-config>
+
+    <!-- For all other domains, use HTTPS only (default) -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">*</domain>
+    </domain-config>
+</network-security-config>
+
