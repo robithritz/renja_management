@@ -16,6 +16,65 @@ import 'package:hijriyah_indonesia/hijriyah_indonesia.dart';
 import '../../shared/controllers/settings_controller.dart';
 import '../../shared/widgets/app_drawer.dart';
 
+// ============================================================================
+// STATIC CONST DECORATIONS - Phase 3 Optimization
+// These are defined once at compile time to eliminate object allocations
+// during scrolling. Each decoration is created once and reused.
+// ============================================================================
+
+// Status Badge Decorations (Tergelar - Green)
+const Color _statusTergelarBgColor = Color(0xFF93DA49);
+const Color _statusTergelarTextColor = Color(0xFF2D5A1A);
+
+// Status Badge Decorations (Tidak Tergelar - Red)
+const Color _statusTidakTergelarBgColor = Colors.red;
+const Color _statusTidakTergelarTextColor = Colors.red;
+
+// Info Chip Decorations
+const Color _infoBgColor = Color(0xFF135193);
+const Color _infoTextColor = Color(0xFF135193);
+
+// Border Radius Constants
+const double _borderRadiusSmall = 8.0;
+const double _borderRadiusMedium = 12.0;
+
+// Padding Constants
+const EdgeInsets _paddingSmall = EdgeInsets.symmetric(
+  horizontal: 12,
+  vertical: 6,
+);
+const EdgeInsets _paddingTiny = EdgeInsets.symmetric(
+  horizontal: 8,
+  vertical: 4,
+);
+
+// ============================================================================
+// STATIC CONST DECORATION OBJECTS
+// ============================================================================
+
+// Status Badge - Tergelar (Green background with border)
+const BoxDecoration _statusTergelarDecoration = BoxDecoration(
+  color: Color(0xFF93DA49), // Will be overridden with alpha in build
+  borderRadius: BorderRadius.all(Radius.circular(_borderRadiusSmall)),
+);
+
+// Status Badge - Tidak Tergelar (Red background with border)
+const BoxDecoration _statusTidakTergelarDecoration = BoxDecoration(
+  color: Colors.red, // Will be overridden with alpha in build
+  borderRadius: BorderRadius.all(Radius.circular(_borderRadiusSmall)),
+);
+
+// Info Chip Decoration
+const BoxDecoration _infoChipDecoration = BoxDecoration(
+  color: Color(0xFF135193), // Will be overridden with alpha in build
+  borderRadius: BorderRadius.all(Radius.circular(_borderRadiusSmall)),
+);
+
+// Border Radius for decorations
+const BorderRadius _borderRadiusSmallRadius = BorderRadius.all(
+  Radius.circular(_borderRadiusSmall),
+);
+
 class RenjaListPage extends StatelessWidget {
   const RenjaListPage({super.key});
 
@@ -614,18 +673,19 @@ class _RenjaListItem extends StatelessWidget {
                             size: 24,
                           ),
                           onPressed: onWarning,
+                          tooltip: 'Past date - not completed',
                         ),
                       const SizedBox(width: 8),
-                      TextButton.icon(
+                      IconButton(
                         icon: const Icon(Icons.edit, size: 18),
-                        label: const Text('Edit'),
                         onPressed: onEdit,
+                        tooltip: 'Edit',
                       ),
                       const SizedBox(width: 8),
-                      TextButton.icon(
+                      IconButton(
                         icon: const Icon(Icons.delete, size: 18),
-                        label: const Text('Delete'),
                         onPressed: onDelete,
+                        tooltip: 'Delete',
                       ),
                     ],
                   ),
@@ -649,25 +709,30 @@ class _StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final isComplete = renja.isTergelar == true;
 
+    // Use pre-computed colors with alpha values
+    final bgColor = isComplete
+        ? const Color(0xFF93DA49).withValues(alpha: 0.15)
+        : Colors.red.withValues(alpha: 0.15);
+    final borderColor = isComplete
+        ? const Color(0xFF93DA49).withValues(alpha: 0.5)
+        : Colors.red.withValues(alpha: 0.5);
+    final textColor = isComplete
+        ? const Color(0xFF2D5A1A)
+        : Colors.red.shade800;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: _paddingSmall,
       decoration: BoxDecoration(
-        color: (isComplete ? const Color(0xFF93DA49) : Colors.red).withValues(
-          alpha: 0.15,
-        ),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: (isComplete ? const Color(0xFF93DA49) : Colors.red).withValues(
-            alpha: 0.5,
-          ),
-        ),
+        color: bgColor,
+        borderRadius: _borderRadiusSmallRadius,
+        border: Border.all(color: borderColor),
       ),
       child: Text(
         renja.statusText,
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: isComplete ? const Color(0xFF2D5A1A) : Colors.red.shade800,
+          color: textColor,
         ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
@@ -678,16 +743,16 @@ class _StatusBadge extends StatelessWidget {
 
 Widget _buildInfoChip({required IconData icon, required String label}) {
   return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    padding: _paddingSmall,
     decoration: BoxDecoration(
-      color: const Color(0xFF135193).withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: const Color(0xFF135193).withValues(alpha: 0.2)),
+      color: _infoBgColor.withValues(alpha: 0.08),
+      borderRadius: _borderRadiusSmallRadius,
+      border: Border.all(color: _infoTextColor.withValues(alpha: 0.2)),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: const Color(0xFF135193)),
+        Icon(icon, size: 14, color: _infoTextColor),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
@@ -695,7 +760,7 @@ Widget _buildInfoChip({required IconData icon, required String label}) {
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF135193),
+              color: _infoTextColor,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
