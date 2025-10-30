@@ -48,6 +48,9 @@ class RenjaController extends GetxController {
   final calendarMode = false.obs;
   final currentMonth = DateTime(DateTime.now().year, DateTime.now().month).obs;
 
+  // Cache for items grouped by date (for calendar performance)
+  final _itemsByDate = <String, List<Renja>>{}.obs;
+
   // Derived list with filters applied (instansi, tahun hijriah, bulan hijriah, status)
   List<Renja> get filteredItems {
     Iterable<Renja> list = items;
@@ -58,6 +61,20 @@ class RenjaController extends GetxController {
     }
 
     return list.toList();
+  }
+
+  // Get items for a specific date (cached)
+  List<Renja> getItemsByDate(String date) {
+    return _itemsByDate[date] ?? [];
+  }
+
+  // Rebuild the date cache when items change
+  void _rebuildDateCache() {
+    final cache = <String, List<Renja>>{};
+    for (final item in filteredItems) {
+      cache.putIfAbsent(item.date, () => []).add(item);
+    }
+    _itemsByDate.value = cache;
   }
 
   @override
@@ -104,6 +121,7 @@ class RenjaController extends GetxController {
       final pagination = response['pagination'] as Map<String, dynamic>;
       totalItems.value = pagination['total'] as int;
       totalPages.value = pagination['totalPages'] as int;
+      _rebuildDateCache();
     } on ConnectionException catch (e) {
       connectionError.value = e.toString();
     } catch (e) {
@@ -131,6 +149,7 @@ class RenjaController extends GetxController {
       final pagination = response['pagination'] as Map<String, dynamic>;
       totalItems.value = pagination['total'] as int;
       totalPages.value = pagination['totalPages'] as int;
+      _rebuildDateCache();
     } on ConnectionException catch (e) {
       currentPage.value--;
       connectionError.value = e.toString();

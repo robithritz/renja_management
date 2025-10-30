@@ -52,6 +52,73 @@ class Renja {
     required this.updatedAt,
   });
 
+  // Computed properties for performance optimization
+  // These are cached at the model level to avoid repeated DateTime.parse() calls
+
+  /// Get the day name (Minggu, Senin, etc.) from the date string
+  /// Cached to avoid repeated DateTime.parse() calls
+  String get dayName {
+    try {
+      final dateTime = DateTime.parse(date);
+      const days = [
+        'Minggu',
+        'Senin',
+        'Selasa',
+        'Rabu',
+        'Kamis',
+        'Jumat',
+        'Sabtu',
+      ];
+      return days[dateTime.weekday % 7];
+    } catch (_) {
+      return '';
+    }
+  }
+
+  /// Get the formatted date string (e.g., "15 Jan 2024")
+  /// Cached to avoid repeated DateTime.parse() calls
+  String get formattedDate {
+    try {
+      final dateTime = DateTime.parse(date);
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'Mei',
+        'Jun',
+        'Jul',
+        'Agu',
+        'Sep',
+        'Okt',
+        'Nov',
+        'Des',
+      ];
+      return '${dateTime.day} ${months[dateTime.month - 1]} ${dateTime.year}';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  /// Check if the date has passed (is before today)
+  /// Cached to avoid repeated DateTime.parse() calls
+  bool get isDatePassed {
+    try {
+      final dateTime = DateTime.parse(date);
+      return dateTime.isBefore(DateTime.now());
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Get the status text for display
+  /// Cached to avoid repeated string concatenation
+  String get statusText {
+    if (isTergelar == null) return '';
+    if (isTergelar == true) return 'Tergelar';
+    return 'Tidak - ${reasonTidakTergelar ?? 'No reason'}';
+  }
+
   Renja copyWith({
     String? uuid,
     String? date,

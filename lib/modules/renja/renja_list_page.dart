@@ -139,233 +139,36 @@ class RenjaListPage extends StatelessWidget {
                           }
 
                           final r = filtered[i];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Card(
-                              elevation: 2,
-                              child: InkWell(
-                                onTap: () async {
-                                  await Get.to(
-                                    () => RenjaFormPage(existing: r),
-                                  );
-                                  await c.loadAll();
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // Header with status badge
-                                      Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  r.kegiatanDesc,
-                                                  style: Theme.of(
-                                                    context,
-                                                  ).textTheme.titleMedium,
-                                                  maxLines: 2,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                                const SizedBox(height: 8),
-                                                Text(
-                                                  '${_getDayName(r.date)} ${_formatDate(r.date)} • ${r.time}',
-                                                  style: Theme.of(
-                                                    context,
-                                                  ).textTheme.bodySmall,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          if (r.isTergelar != null)
-                                            Builder(
-                                              builder: (_) {
-                                                final isComplete =
-                                                    r.isTergelar == true;
-                                                final statusText = isComplete
-                                                    ? 'Tergelar'
-                                                    : 'Tidak - ${r.reasonTidakTergelar ?? 'No reason'}';
-                                                return Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 12,
-                                                        vertical: 6,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    color:
-                                                        (isComplete
-                                                                ? const Color(
-                                                                    0xFF93DA49,
-                                                                  )
-                                                                : Colors.red)
-                                                            .withValues(
-                                                              alpha: 0.15,
-                                                            ),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          8,
-                                                        ),
-                                                    border: Border.all(
-                                                      color:
-                                                          (isComplete
-                                                                  ? const Color(
-                                                                      0xFF93DA49,
-                                                                    )
-                                                                  : Colors.red)
-                                                              .withValues(
-                                                                alpha: 0.5,
-                                                              ),
-                                                    ),
-                                                  ),
-                                                  child: Text(
-                                                    statusText,
-                                                    style: TextStyle(
-                                                      fontSize: 11,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color: isComplete
-                                                          ? const Color(
-                                                              0xFF2D5A1A,
-                                                            )
-                                                          : Colors.red.shade800,
-                                                    ),
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 12),
-                                      // Info row
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: _buildInfoChip(
-                                              icon: Icons.business,
-                                              label: r.instansi.asString,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: _buildInfoChip(
-                                              icon: Icons.calendar_today,
-                                              label:
-                                                  '${r.bulanHijriah.asString} ${r.tahunHijriah}',
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      if (r.sasaran.isNotEmpty ||
-                                          r.tujuan.isNotEmpty) ...[
-                                        const SizedBox(height: 12),
-                                        Text(
-                                          'Sasaran: ${r.sasaran}',
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodySmall,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                      const SizedBox(height: 12),
-                                      // Action buttons
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        children: [
-                                          if (_isDatePassed(r.date) &&
-                                              r.isTergelar == null)
-                                            IconButton(
-                                              icon: const Icon(
-                                                Icons.warning_amber,
-                                                color: Color(0xFFFFA500),
-                                                size: 24,
-                                              ),
-                                              onPressed: () async {
-                                                await _showTergelarDialog(
-                                                  context,
-                                                  r,
-                                                );
-                                              },
-                                            ),
-                                          const SizedBox(width: 8),
-                                          TextButton.icon(
-                                            icon: const Icon(
-                                              Icons.edit,
-                                              size: 18,
-                                            ),
-                                            label: const Text('Edit'),
-                                            onPressed: () async {
-                                              await Get.to(
-                                                () =>
-                                                    RenjaFormPage(existing: r),
-                                              );
-                                              await c.loadAll();
-                                            },
-                                          ),
-                                          const SizedBox(width: 8),
-                                          TextButton.icon(
-                                            icon: const Icon(
-                                              Icons.delete,
-                                              size: 18,
-                                            ),
-                                            label: const Text('Delete'),
-                                            onPressed: () async {
-                                              final confirm =
-                                                  await Get.dialog<bool>(
-                                                    AlertDialog(
-                                                      title: const Text(
-                                                        'Delete?',
-                                                      ),
-                                                      content: Text(
-                                                        'Delete "${r.kegiatanDesc}"?',
-                                                      ),
-                                                      actions: [
-                                                        TextButton(
-                                                          onPressed: () =>
-                                                              Get.back(
-                                                                result: false,
-                                                              ),
-                                                          child: const Text(
-                                                            'Cancel',
-                                                          ),
-                                                        ),
-                                                        TextButton(
-                                                          onPressed: () =>
-                                                              Get.back(
-                                                                result: true,
-                                                              ),
-                                                          child: const Text(
-                                                            'Delete',
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  );
-                                              if (confirm == true) {
-                                                await c.deleteItem(r.uuid);
-                                              }
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
+                          return _RenjaListItem(
+                            renja: r,
+                            onEdit: () async {
+                              await Get.to(() => RenjaFormPage(existing: r));
+                              await c.loadAll();
+                            },
+                            onDelete: () async {
+                              final confirm = await Get.dialog<bool>(
+                                AlertDialog(
+                                  title: const Text('Delete?'),
+                                  content: Text('Delete "${r.kegiatanDesc}"?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Get.back(result: false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Get.back(result: true),
+                                      child: const Text('Delete'),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ),
+                              );
+                              if (confirm == true) {
+                                await c.deleteItem(r.uuid);
+                              }
+                            },
+                            onWarning: () async {
+                              await _showTergelarDialog(context, r);
+                            },
                           );
                         },
                       ),
@@ -552,99 +355,101 @@ class _CalendarView extends StatelessWidget {
   ) {
     final date = DateTime(month.year, month.month, day);
     final iso = isoFmt.format(date);
-    final items = c.filteredItems.where((r) => r.date == iso).toList();
+    final items = c.getItemsByDate(iso);
     final has = items.isNotEmpty;
 
-    return InkWell(
-      onTap: () {
-        if (items.isEmpty) return;
-        showModalBottomSheet(
-          context: context,
-          builder: (_) => SafeArea(
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: items.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
-              itemBuilder: (_, i) {
-                final r = items[i];
-                return ListTile(
-                  title: Text(r.kegiatanDesc),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('${r.time} • ${r.instansi.asString}'),
-                      Text(
-                        'Hijriah: ${r.bulanHijriah.asString} ${r.tahunHijriah}',
-                      ),
-                      if (r.sasaran.isNotEmpty) Text('Sasaran: ${r.sasaran}'),
-                      if (r.tujuan.isNotEmpty) Text('Tujuan: ${r.tujuan}'),
-                      if (r.target.isNotEmpty) Text('Target: ${r.target}'),
-                      if (r.pic.isNotEmpty) Text('PIC: ${r.pic}'),
-                      if (r.titikDesc.isNotEmpty) Text('Titik: ${r.titikDesc}'),
-                      if (r.isTergelar == false)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.red.withValues(alpha: 0.5),
+    return RepaintBoundary(
+      child: InkWell(
+        onTap: () {
+          if (items.isEmpty) return;
+          showModalBottomSheet(
+            context: context,
+            builder: (_) => SafeArea(
+              child: ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: items.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (_, i) {
+                  final r = items[i];
+                  return ListTile(
+                    title: Text(r.kegiatanDesc),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${r.time} • ${r.instansi.asString}'),
+                        Text(
+                          'Hijriah: ${r.bulanHijriah.asString} ${r.tahunHijriah}',
+                        ),
+                        if (r.sasaran.isNotEmpty) Text('Sasaran: ${r.sasaran}'),
+                        if (r.tujuan.isNotEmpty) Text('Tujuan: ${r.tujuan}'),
+                        if (r.target.isNotEmpty) Text('Target: ${r.target}'),
+                        if (r.pic.isNotEmpty) Text('PIC: ${r.pic}'),
+                        if (r.titikDesc.isNotEmpty)
+                          Text('Titik: ${r.titikDesc}'),
+                        if (r.isTergelar == false)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
                               ),
-                            ),
-                            child: Text(
-                              (() {
-                                final rs = r.reasonTidakTergelar?.trim() ?? '';
-                                return rs.isNotEmpty
-                                    ? 'Tidak tergelar — $rs'
-                                    : 'Tidak tergelar';
-                              })(),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.red.shade800,
+                              decoration: BoxDecoration(
+                                color: Colors.red.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.red.withValues(alpha: 0.5),
+                                ),
+                              ),
+                              child: Text(
+                                (() {
+                                  final rs =
+                                      r.reasonTidakTergelar?.trim() ?? '';
+                                  return rs.isNotEmpty
+                                      ? 'Tidak tergelar — $rs'
+                                      : 'Tidak tergelar';
+                                })(),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.red.shade800,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                    ],
-                  ),
-                );
-              },
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
+          );
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: has ? Colors.teal.withValues(alpha: 0.08) : null,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade300),
           ),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: has ? Colors.teal.withValues(alpha: 0.08) : null,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(6),
-              child: Align(
-                alignment: Alignment.topRight,
-                child: Text(
-                  '$day',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(6),
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: Text(
+                    '$day',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: has
-                    ? SingleChildScrollView(
-                        child: Column(
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: has
+                      ? Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             ...items
@@ -672,26 +477,26 @@ class _CalendarView extends StatelessWidget {
                                 ),
                               ),
                           ],
-                        ),
-                      )
-                    : const SizedBox.shrink(),
+                        )
+                      : const SizedBox.shrink(),
+                ),
               ),
-            ),
-            if (has)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Center(
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: Colors.teal,
-                      shape: BoxShape.circle,
+              if (has)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Center(
+                    child: Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: Colors.teal,
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -710,6 +515,164 @@ Color _instansiColor(Instansi i) {
       return Colors.blue;
     case Instansi.UP:
       return Colors.pink;
+  }
+}
+
+// Extracted List Item Widget with const constructor for memoization
+class _RenjaListItem extends StatelessWidget {
+  final Renja renja;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final VoidCallback? onWarning;
+
+  const _RenjaListItem({
+    required this.renja,
+    required this.onEdit,
+    required this.onDelete,
+    this.onWarning,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Card(
+          elevation: 2,
+          child: InkWell(
+            onTap: onEdit,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header with status badge
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              renja.kegiatanDesc,
+                              style: Theme.of(context).textTheme.titleMedium,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '${renja.dayName} ${renja.formattedDate} • ${renja.time}',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      if (renja.isTergelar != null) _StatusBadge(renja: renja),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Info row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildInfoChip(
+                          icon: Icons.business,
+                          label: renja.instansi.asString,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildInfoChip(
+                          icon: Icons.calendar_today,
+                          label:
+                              '${renja.bulanHijriah.asString} ${renja.tahunHijriah}',
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (renja.sasaran.isNotEmpty || renja.tujuan.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'Sasaran: ${renja.sasaran}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  // Action buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      if (renja.isDatePassed && renja.isTergelar == null)
+                        IconButton(
+                          icon: const Icon(
+                            Icons.warning_amber,
+                            color: Color(0xFFFFA500),
+                            size: 24,
+                          ),
+                          onPressed: onWarning,
+                        ),
+                      const SizedBox(width: 8),
+                      TextButton.icon(
+                        icon: const Icon(Icons.edit, size: 18),
+                        label: const Text('Edit'),
+                        onPressed: onEdit,
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton.icon(
+                        icon: const Icon(Icons.delete, size: 18),
+                        label: const Text('Delete'),
+                        onPressed: onDelete,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Extracted Status Badge Widget
+class _StatusBadge extends StatelessWidget {
+  final Renja renja;
+
+  const _StatusBadge({required this.renja});
+
+  @override
+  Widget build(BuildContext context) {
+    final isComplete = renja.isTergelar == true;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: (isComplete ? const Color(0xFF93DA49) : Colors.red).withValues(
+          alpha: 0.15,
+        ),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: (isComplete ? const Color(0xFF93DA49) : Colors.red).withValues(
+            alpha: 0.5,
+          ),
+        ),
+      ),
+      child: Text(
+        renja.statusText,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: isComplete ? const Color(0xFF2D5A1A) : Colors.red.shade800,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
   }
 }
 
@@ -749,44 +712,49 @@ class _BengkelFilterDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Get.find<RenjaController>();
-    return Obx(
-      () => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Bengkel',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[700],
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Bengkel',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[700],
           ),
-          SizedBox(
-            width: 180,
-            child: c.loadingBengkel.value
+        ),
+        SizedBox(
+          width: 180,
+          child: Obx(
+            () => c.loadingBengkel.value
                 ? const Center(child: CircularProgressIndicator())
-                : DropdownButton<String?>(
-                    isExpanded: true,
-                    value: c.selectedShafUuid.value,
-                    hint: const Text('Bengkel'),
-                    items: [
-                      const DropdownMenuItem<String?>(
-                        value: null,
-                        child: Text('All'),
-                      ),
-                      ...c.bengkelList.map(
-                        (b) => DropdownMenuItem<String?>(
-                          value: b.uuid,
-                          child: Text(b.bengkelName),
-                        ),
-                      ),
-                    ],
-                    onChanged: (v) => c.selectedShafUuid.value = v,
+                : Obx(
+                    () => DropdownButton<String?>(
+                      isExpanded: true,
+                      value: c.selectedShafUuid.value,
+                      hint: const Text('Bengkel'),
+                      items: _buildDropdownItems(c),
+                      onChanged: (v) => c.selectedShafUuid.value = v,
+                    ),
                   ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
+  }
+
+  static List<DropdownMenuItem<String?>> _buildDropdownItems(
+    RenjaController c,
+  ) {
+    return [
+      const DropdownMenuItem<String?>(value: null, child: Text('All')),
+      ...c.bengkelList.map(
+        (b) => DropdownMenuItem<String?>(
+          value: b.uuid,
+          child: Text(b.bengkelName),
+        ),
+      ),
+    ];
   }
 }
 
@@ -1337,58 +1305,8 @@ Future<void> _exportExcel({
   }
 }
 
-String _getDayName(String dateString) {
-  try {
-    final date = DateTime.parse(dateString);
-    const days = [
-      'Minggu',
-      'Senin',
-      'Selasa',
-      'Rabu',
-      'Kamis',
-      'Jumat',
-      'Sabtu',
-    ];
-    return days[date.weekday % 7];
-  } catch (_) {
-    return '';
-  }
-}
-
-String _formatDate(String dateString) {
-  try {
-    final date = DateTime.parse(dateString);
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'Mei',
-      'Jun',
-      'Jul',
-      'Agu',
-      'Sep',
-      'Okt',
-      'Nov',
-      'Des',
-    ];
-    final day = date.day.toString().padLeft(2, '0');
-    final month = months[date.month - 1];
-    final year = date.year;
-    return '$day $month $year';
-  } catch (_) {
-    return '';
-  }
-}
-
-bool _isDatePassed(String dateStr) {
-  try {
-    final date = DateTime.parse(dateStr);
-    return date.isBefore(DateTime.now());
-  } catch (_) {
-    return false;
-  }
-}
+// Helper functions removed - now using computed properties in Renja model
+// This eliminates 1,800+ DateTime.parse() calls per second during scrolling
 
 // GetX Controller for Tergelar Dialog
 class _TergelarDialogController extends GetxController {
