@@ -301,6 +301,67 @@ class MonevController extends GetxController {
 
   Future<void> loadAvailableMonthYears() async {
     try {
+      print("mulai di monev");
+      // First try to get from API to ensure we have the latest data
+      try {
+        final response = await _apiRepo.getAll(limit: 1000);
+        final monevList = response['data'] as List<Monev>? ?? [];
+
+        if (monevList.isNotEmpty) {
+          // Extract unique month/year combinations from API data
+          final monthYearSet = <String>{};
+          final maps = <Map<String, dynamic>>[];
+
+          for (final monev in monevList) {
+            final key = '${monev.bulanHijriah.asString}_${monev.tahunHijriah}';
+            if (!monthYearSet.contains(key)) {
+              monthYearSet.add(key);
+              maps.add({
+                'bulan_hijriah': monev.bulanHijriah.asString,
+                'tahun_hijriah': monev.tahunHijriah,
+              });
+            }
+          }
+
+          // Sort by year DESC, month ASC
+          maps.sort((a, b) {
+            final yearCmp = (b['tahun_hijriah'] as int).compareTo(
+              a['tahun_hijriah'] as int,
+            );
+            if (yearCmp != 0) return yearCmp;
+            return (a['bulan_hijriah'] as String).compareTo(
+              b['bulan_hijriah'] as String,
+            );
+          });
+
+          availableMonthYears.value = maps;
+
+          // Set default to the first (most recent) month/year
+          if (maps.isNotEmpty) {
+            final first = maps.first;
+            final month = HijriahMonthX.fromDb(
+              first['bulan_hijriah'] as String,
+            );
+            final year = first['tahun_hijriah'] as int;
+
+            // Set both old and new filter variables
+            selectedMonth.value = month;
+            selectedYear.value = year;
+            selectedBulanHijriah.value = month;
+            selectedTahunHijriah.value = year;
+
+            await loadAvailableShafs();
+            await loadSummary();
+            await loadSummaryWithFilters();
+          }
+          return;
+        }
+      } catch (_) {
+        // If API fails, fall back to local database
+      }
+
+      print("kena fallback local monev");
+      // Fallback to local database if API fails
       final maps = await _localRepo.getAvailableMonthYears();
       availableMonthYears.value = maps;
 
