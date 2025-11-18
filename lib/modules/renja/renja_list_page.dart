@@ -8,6 +8,9 @@ import 'renja_controller.dart';
 import 'renja_form_page.dart';
 import 'package:syncfusion_flutter_xlsio/xlsio.dart' as xls;
 import 'package:file_selector/file_selector.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'dart:io';
 import '../../data/models/renja.dart';
 import 'dart:typed_data';
 
@@ -1338,28 +1341,80 @@ Future<void> _exportExcel({
     wb.dispose();
 
     const fileName = 'renja_export.xlsx';
-    final result = await getSaveLocation(
-      suggestedName: fileName,
-      acceptedTypeGroups: const [
-        XTypeGroup(label: 'Excel Workbook', extensions: ['xlsx']),
-      ],
-    );
-    if (result == null) return;
 
-    final xfile = XFile.fromData(
-      Uint8List.fromList(bytes),
-      name: fileName,
-      mimeType:
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    );
-    await xfile.saveTo(result.path);
+    // Platform-specific file saving
+    String? savedPath;
 
-    Get.snackbar(
-      'Export selesai',
-      'File disimpan ke: ${result.path}',
-      snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 4),
-    );
+    if (Platform.isAndroid || Platform.isIOS) {
+      // For mobile platforms, save to app's documents directory
+      try {
+        final directory = await getApplicationDocumentsDirectory();
+        final filePath = '${directory.path}/$fileName';
+        final file = File(filePath);
+        await file.writeAsBytes(bytes);
+        savedPath = filePath;
+
+        // On Android/iOS, automatically open share dialog after saving
+        await SharePlus.instance.share(
+          ShareParams(
+            files: [
+              XFile(
+                filePath,
+                mimeType:
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              ),
+            ],
+            text: 'Laporan Renja',
+          ),
+        );
+      } catch (e) {
+        Get.snackbar(
+          'Export gagal',
+          'Gagal menyimpan file: $e',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 5),
+        );
+        return;
+      }
+    } else {
+      // For desktop platforms (macOS, Windows, Linux), use file selector
+      try {
+        final result = await getSaveLocation(
+          suggestedName: fileName,
+          acceptedTypeGroups: const [
+            XTypeGroup(label: 'Excel Workbook', extensions: ['xlsx']),
+          ],
+        );
+        if (result == null) return;
+
+        final xfile = XFile.fromData(
+          Uint8List.fromList(bytes),
+          name: fileName,
+          mimeType:
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        );
+        await xfile.saveTo(result.path);
+        savedPath = result.path;
+      } catch (e) {
+        Get.snackbar(
+          'Export gagal',
+          'Gagal menyimpan file: $e',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 5),
+        );
+        return;
+      }
+    }
+
+    // Show success message for desktop platforms
+    if (!Platform.isAndroid && !Platform.isIOS) {
+      Get.snackbar(
+        'Export selesai',
+        'File disimpan ke: $savedPath',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 4),
+      );
+    }
   } catch (e) {
     Get.snackbar(
       'Export gagal',

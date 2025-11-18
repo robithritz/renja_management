@@ -1,22 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'modules/renja/renja_list_page.dart';
+import 'modules/auth/login_page.dart';
 import 'data/repositories/renja_api_repository.dart';
 import 'data/repositories/shaf_api_repository.dart';
 import 'data/repositories/monev_api_repository.dart';
 import 'data/repositories/monev_repository.dart';
+import 'data/repositories/auth_repository.dart';
 import 'modules/renja/renja_controller.dart';
-
 import 'shared/controllers/settings_controller.dart';
+import 'shared/controllers/auth_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize GetStorage for local data persistence
+  await GetStorage.init();
+
   // Initialize locale data for intl (e.g., id_ID month names, currency)
   await initializeDateFormatting('id_ID', null);
+
   // Put dependencies
   Get.put<SettingsController>(SettingsController(), permanent: true);
+
+  // Register Auth Repository and Controller
+  Get.put<AuthRepository>(AuthRepository(), permanent: true);
+  Get.put<AuthController>(AuthController(Get.find()), permanent: true);
 
   // Register API repositories
   Get.put<RenjaApiRepository>(RenjaApiRepository(), permanent: true);
@@ -35,6 +47,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authController = Get.find<AuthController>();
+
     return GetMaterialApp(
       title: 'Renja Management',
       theme: _buildCorporateTheme(),
@@ -50,7 +64,15 @@ class MyApp extends StatelessWidget {
           ),
         );
       },
-      home: const RenjaListPage(),
+      home: Obx(
+        () => authController.isLoggedIn.value
+            ? const RenjaListPage()
+            : const LoginPage(),
+      ),
+      routes: {
+        '/home': (context) => const RenjaListPage(),
+        '/login': (context) => const LoginPage(),
+      },
       debugShowCheckedModeBanner: false,
     );
   }

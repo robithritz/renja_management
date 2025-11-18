@@ -27,7 +27,7 @@ class RenjaController extends GetxController {
 
   // Pagination
   final currentPage = 1.obs;
-  final pageLimit = 10.obs;
+  final pageLimit = 50.obs;
   final totalItems = 0.obs;
   final totalPages = 0.obs;
 

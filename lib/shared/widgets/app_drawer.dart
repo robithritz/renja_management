@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../modules/renja/renja_list_page.dart';
 import '../../modules/shaf/shaf_list_page.dart';
 import '../../modules/monev/monev_list_page.dart';
+import '../controllers/auth_controller.dart';
 
 enum DrawerItem { renja, shaf, monev }
 
@@ -23,6 +24,8 @@ class AppDrawer extends StatelessWidget {
           _DrawerMonevItem(isSelected: selectedItem == DrawerItem.monev),
           const Divider(height: 24),
           const _DrawerSettingsItem(),
+          const Divider(height: 24),
+          const _DrawerLogoutItem(),
         ],
       ),
     );
@@ -121,6 +124,45 @@ class _DrawerSettingsItem extends StatelessWidget {
       leading: const Icon(Icons.settings, color: Color(0xFF8D949B)),
       title: const Text('Settings'),
       onTap: () => Get.back(),
+    );
+  }
+}
+
+class _DrawerLogoutItem extends StatelessWidget {
+  const _DrawerLogoutItem();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.logout, color: Colors.red),
+      title: const Text('Logout'),
+      onTap: () async {
+        Get.back(); // Close drawer
+
+        // Show confirmation dialog
+        final confirm = await Get.dialog<bool>(
+          AlertDialog(
+            title: const Text('Logout'),
+            content: const Text('Are you sure you want to logout?'),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(result: false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Get.back(result: true),
+                child: const Text('Logout'),
+              ),
+            ],
+          ),
+        );
+
+        if (confirm == true) {
+          final authController = Get.find<AuthController>();
+          await authController.logout();
+          Get.offAllNamed('/login');
+        }
+      },
     );
   }
 }
