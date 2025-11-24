@@ -44,6 +44,7 @@ class AuthController extends GetxController {
         try {
           final renjaController = Get.find<RenjaController>();
           await renjaController.loadAll();
+          await renjaController.loadBengkelList();
         } catch (e) {
           // Silently handle if RenjaController is not yet initialized
           // The controller will load data when the page is opened
