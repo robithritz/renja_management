@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/models/user.dart';
+import '../../modules/renja/renja_controller.dart';
 
 class AuthController extends GetxController {
   final AuthRepository _authRepository;
@@ -38,6 +39,16 @@ class AuthController extends GetxController {
         currentUser.value = response.data.user;
         isLoggedIn.value = true;
         errorMessage.value = null;
+
+        // Refetch renja data after successful login
+        try {
+          final renjaController = Get.find<RenjaController>();
+          await renjaController.loadAll();
+        } catch (e) {
+          // Silently handle if RenjaController is not yet initialized
+          // The controller will load data when the page is opened
+        }
+
         return true;
       } else {
         errorMessage.value = response.message;
@@ -68,4 +79,3 @@ class AuthController extends GetxController {
     errorMessage.value = null;
   }
 }
-
