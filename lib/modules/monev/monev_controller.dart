@@ -77,14 +77,10 @@ class MonevController extends GetxController {
 
   // Load summary data based on current filters from API
   Future<void> loadSummaryWithFilters() async {
-    if (selectedBulanHijriah.value == null ||
-        selectedTahunHijriah.value == null) {
-      return;
-    }
-
     summaryLoading.value = true;
     try {
       // Fetch all monev data with current filters
+      // Note: All filters are optional (null means "all")
       final response = await _apiRepo.getAll(
         shafUuid: selectedBengkelUuid.value,
         bulanHijriah: selectedBulanHijriah.value?.name,
@@ -301,7 +297,6 @@ class MonevController extends GetxController {
 
   Future<void> loadAvailableMonthYears() async {
     try {
-      print("mulai di monev");
       // First try to get from API to ensure we have the latest data
       try {
         final response = await _apiRepo.getAll(limit: 1000);
@@ -360,27 +355,26 @@ class MonevController extends GetxController {
         // If API fails, fall back to local database
       }
 
-      print("kena fallback local monev");
       // Fallback to local database if API fails
-      final maps = await _localRepo.getAvailableMonthYears();
-      availableMonthYears.value = maps;
+      // final maps = await _localRepo.getAvailableMonthYears();
+      // availableMonthYears.value = maps;
 
-      // Set default to the first (most recent) month/year
-      if (maps.isNotEmpty) {
-        final first = maps.first;
-        final month = HijriahMonthX.fromDb(first['bulan_hijriah'] as String);
-        final year = first['tahun_hijriah'] as int;
+      // // Set default to the first (most recent) month/year
+      // if (maps.isNotEmpty) {
+      //   final first = maps.first;
+      //   final month = HijriahMonthX.fromDb(first['bulan_hijriah'] as String);
+      //   final year = first['tahun_hijriah'] as int;
 
-        // Set both old and new filter variables
-        selectedMonth.value = month;
-        selectedYear.value = year;
-        selectedBulanHijriah.value = month;
-        selectedTahunHijriah.value = year;
+      //   // Set both old and new filter variables
+      //   selectedMonth.value = month;
+      //   selectedYear.value = year;
+      //   selectedBulanHijriah.value = month;
+      //   selectedTahunHijriah.value = year;
 
-        await loadAvailableShafs();
-        await loadSummary();
-        await loadSummaryWithFilters();
-      }
+      //   await loadAvailableShafs();
+      //   await loadSummary();
+      //   await loadSummaryWithFilters();
+      // }
     } catch (_) {
       // Silently handle error - no data available yet
     }

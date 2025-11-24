@@ -12,8 +12,23 @@ import '../../data/repositories/monev_api_repository.dart';
 import '../../shared/enums/hijriah_month.dart';
 import 'monev_controller.dart';
 
-class MonevSummaryPage extends StatelessWidget {
+class MonevSummaryPage extends StatefulWidget {
   const MonevSummaryPage({super.key});
+
+  @override
+  State<MonevSummaryPage> createState() => _MonevSummaryPageState();
+}
+
+class _MonevSummaryPageState extends State<MonevSummaryPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Load summary with current filters when page is opened
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final c = Get.find<MonevController>();
+      c.loadSummaryWithFilters();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,421 +65,401 @@ class MonevSummaryPage extends StatelessWidget {
           }),
         ],
       ),
-      body: Obx(() {
-        if (c.availableMonthYears.isEmpty) {
-          return const Center(child: Text('Belum ada data Monev'));
-        }
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Filter Section
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Obx(() {
+                  // final years =
+                  //     c.availableMonthYears
+                  //         .map((m) => m['tahun_hijriah'] as int)
+                  //         .toSet()
+                  //         .toList()
+                  //       ..sort((a, b) => b.compareTo(a));
+                  final years = [1446, 1447, 1448, 1449, 1450].toList()..sort();
+                  final months = HijriahMonth.values.toList()
+                    ..sort((a, b) => a.asString.compareTo(b.asString));
+                  const pekanNumbers = [1, 2, 3, 4];
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Filter Section
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Obx(() {
-                    final years =
-                        c.availableMonthYears
-                            .map((m) => m['tahun_hijriah'] as int)
-                            .toSet()
-                            .toList()
-                          ..sort((a, b) => b.compareTo(a));
-                    final months = HijriahMonth.values.toList()
-                      ..sort((a, b) => a.asString.compareTo(b.asString));
-                    const pekanNumbers = [1, 2, 3, 4];
+                  // Ensure selected year is in the list or reset to null
+                  if (c.selectedTahunHijriah.value != null &&
+                      !years.contains(c.selectedTahunHijriah.value)) {
+                    c.selectedTahunHijriah.value = null;
+                  }
 
-                    // Ensure selected year is in the list or reset to null
-                    if (c.selectedTahunHijriah.value != null &&
-                        !years.contains(c.selectedTahunHijriah.value)) {
-                      c.selectedTahunHijriah.value = null;
-                    }
+                  // Ensure selected month is valid or reset to null
+                  if (c.selectedBulanHijriah.value != null &&
+                      !months.contains(c.selectedBulanHijriah.value)) {
+                    c.selectedBulanHijriah.value = null;
+                  }
 
-                    // Ensure selected month is valid or reset to null
-                    if (c.selectedBulanHijriah.value != null &&
-                        !months.contains(c.selectedBulanHijriah.value)) {
-                      c.selectedBulanHijriah.value = null;
-                    }
-
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Filter',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Filter',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(height: 16),
-                        // Bengkel Filter
-                        Text(
-                          'Bengkel',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[700],
-                          ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Bengkel Filter
+                      Text(
+                        'Bengkel',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[700],
                         ),
-                        const SizedBox(height: 8),
-                        c.loadingBengkel.value
-                            ? const Center(child: CircularProgressIndicator())
-                            : DropdownButton<String?>(
-                                isExpanded: true,
-                                value: c.selectedBengkelUuid.value,
-                                hint: const Text('Bengkel'),
-                                items: [
-                                  const DropdownMenuItem<String?>(
-                                    value: null,
-                                    child: Text('All'),
-                                  ),
-                                  ...c.bengkelList.map(
-                                    (b) => DropdownMenuItem<String?>(
-                                      value: b.uuid,
-                                      child: Text(b.bengkelName),
-                                    ),
-                                  ),
-                                ],
-                                onChanged: (v) =>
-                                    c.selectedBengkelUuid.value = v,
-                              ),
-                        const SizedBox(height: 16),
-                        // Tahun Hijriah Filter
-                        Text(
-                          'Tahun Hijriah',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        DropdownButton<int?>(
-                          isExpanded: true,
-                          value: c.selectedTahunHijriah.value,
-                          hint: const Text('Tahun'),
-                          items: [
-                            const DropdownMenuItem<int?>(
-                              value: null,
-                              child: Text('All'),
-                            ),
-                            ...years.map(
-                              (y) => DropdownMenuItem<int?>(
-                                value: y,
-                                child: Text('$y'),
-                              ),
-                            ),
-                          ],
-                          onChanged: (v) => c.selectedTahunHijriah.value = v,
-                        ),
-                        const SizedBox(height: 16),
-                        // Bulan Hijriah Filter
-                        Text(
-                          'Bulan Hijriah',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        DropdownButton<HijriahMonth?>(
-                          isExpanded: true,
-                          value: c.selectedBulanHijriah.value,
-                          hint: const Text('Bulan'),
-                          items: [
-                            const DropdownMenuItem<HijriahMonth?>(
-                              value: null,
-                              child: Text('All'),
-                            ),
-                            ...months.map(
-                              (m) => DropdownMenuItem<HijriahMonth?>(
-                                value: m,
-                                child: Text(m.asString),
-                              ),
-                            ),
-                          ],
-                          onChanged: (v) => c.selectedBulanHijriah.value = v,
-                        ),
-                        const SizedBox(height: 16),
-                        // Pekan Filter
-                        Text(
-                          'Pekan',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        DropdownButton<int?>(
-                          isExpanded: true,
-                          value: c.selectedPekan.value,
-                          hint: const Text('Pekan'),
-                          items: [
-                            const DropdownMenuItem<int?>(
-                              value: null,
-                              child: Text('All'),
-                            ),
-                            ...pekanNumbers.map(
-                              (p) => DropdownMenuItem<int?>(
-                                value: p,
-                                child: Text('$p'),
-                              ),
-                            ),
-                          ],
-                          onChanged: (v) => c.selectedPekan.value = v,
-                        ),
-                      ],
-                    );
-                  }),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Summary Data
-              Obx(() {
-                if (c.summaryLoading.value) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                final summary = c.currentSummary.value;
-                if (summary == null) {
-                  return const Center(
-                    child: Text('Tidak ada data untuk periode ini'),
-                  );
-                }
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header Info
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Pekan ${summary.latestWeekNumber} - ${summary.bulanHijriah.asString} ${summary.tahunHijriah}',
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'Data terbaru dari pekan yang diinput',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodySmall,
-                                      ),
-                                    ],
+                      ),
+                      const SizedBox(height: 8),
+                      c.loadingBengkel.value
+                          ? const Center(child: CircularProgressIndicator())
+                          : DropdownButton<String?>(
+                              isExpanded: true,
+                              value: c.selectedBengkelUuid.value,
+                              hint: const Text('Bengkel'),
+                              items: [
+                                const DropdownMenuItem<String?>(
+                                  value: null,
+                                  child: Text('All'),
+                                ),
+                                ...c.bengkelList.map(
+                                  (b) => DropdownMenuItem<String?>(
+                                    value: b.uuid,
+                                    child: Text(b.bengkelName),
                                   ),
                                 ),
-                                if (summary.shafName != null)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
+                              ],
+                              onChanged: (v) => c.selectedBengkelUuid.value = v,
+                            ),
+                      const SizedBox(height: 16),
+                      // Tahun Hijriah Filter
+                      Text(
+                        'Tahun Hijriah',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButton<int?>(
+                        isExpanded: true,
+                        value: c.selectedTahunHijriah.value,
+                        hint: const Text('Tahun'),
+                        items: [
+                          const DropdownMenuItem<int?>(
+                            value: null,
+                            child: Text('All'),
+                          ),
+                          ...years.map(
+                            (y) => DropdownMenuItem<int?>(
+                              value: y,
+                              child: Text('$y'),
+                            ),
+                          ),
+                        ],
+                        onChanged: (v) => c.selectedTahunHijriah.value = v,
+                      ),
+                      const SizedBox(height: 16),
+                      // Bulan Hijriah Filter
+                      Text(
+                        'Bulan Hijriah',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButton<HijriahMonth?>(
+                        isExpanded: true,
+                        value: c.selectedBulanHijriah.value,
+                        hint: const Text('Bulan'),
+                        items: [
+                          const DropdownMenuItem<HijriahMonth?>(
+                            value: null,
+                            child: Text('All'),
+                          ),
+                          ...months.map(
+                            (m) => DropdownMenuItem<HijriahMonth?>(
+                              value: m,
+                              child: Text(m.asString),
+                            ),
+                          ),
+                        ],
+                        onChanged: (v) => c.selectedBulanHijriah.value = v,
+                      ),
+                      const SizedBox(height: 16),
+                      // Pekan Filter
+                      Text(
+                        'Pekan',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButton<int?>(
+                        isExpanded: true,
+                        value: c.selectedPekan.value,
+                        hint: const Text('Pekan'),
+                        items: [
+                          const DropdownMenuItem<int?>(
+                            value: null,
+                            child: Text('All'),
+                          ),
+                          ...pekanNumbers.map(
+                            (p) => DropdownMenuItem<int?>(
+                              value: p,
+                              child: Text('$p'),
+                            ),
+                          ),
+                        ],
+                        onChanged: (v) => c.selectedPekan.value = v,
+                      ),
+                    ],
+                  );
+                }),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Summary Data
+            Obx(() {
+              if (c.summaryLoading.value) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final summary = c.currentSummary.value;
+              if (summary == null) {
+                return const Center(
+                  child: Text('Tidak ada data untuk periode ini'),
+                );
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header Info
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Pekan ${summary.latestWeekNumber} - ${summary.bulanHijriah.asString} ${summary.tahunHijriah}',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                    decoration: BoxDecoration(
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Data terbaru dari pekan yang diinput',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (summary.shafName != null)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(
+                                      0xFF135193,
+                                    ).withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
                                       color: const Color(
                                         0xFF135193,
-                                      ).withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: const Color(
-                                          0xFF135193,
-                                        ).withValues(alpha: 0.3),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      summary.shafName!,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF135193),
-                                      ),
+                                      ).withValues(alpha: 0.3),
                                     ),
                                   ),
-                              ],
-                            ),
-                          ],
-                        ),
+                                  child: Text(
+                                    summary.shafName!,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF135193),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                  ),
+                  const SizedBox(height: 24),
 
-                    // MAL Chart
-                    const Text(
-                      'Aktif MAL',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                  // MAL Chart
+                  const Text(
+                    'Aktif MAL',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: _buildBarChart(
+                        [
+                          summary.activeMalPu.toDouble(),
+                          summary.activeMalClassA.toDouble(),
+                          summary.activeMalClassB.toDouble(),
+                          summary.activeMalClassC.toDouble(),
+                          summary.activeMalClassD.toDouble(),
+                        ],
+                        ['PU', 'Kelas A', 'Kelas B', 'Kelas C', 'Kelas D'],
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: _buildBarChart(
-                          [
-                            summary.activeMalPu.toDouble(),
-                            summary.activeMalClassA.toDouble(),
-                            summary.activeMalClassB.toDouble(),
-                            summary.activeMalClassC.toDouble(),
-                            summary.activeMalClassD.toDouble(),
-                          ],
-                          ['PU', 'Kelas A', 'Kelas B', 'Kelas C', 'Kelas D'],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
+                  ),
+                  const SizedBox(height: 24),
 
-                    // BN Chart
-                    const Text(
-                      'Aktif BN',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                  // BN Chart
+                  const Text(
+                    'Aktif BN',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: _buildBarChart(
+                        [
+                          summary.activeBnPu.toDouble(),
+                          summary.activeBnClassA.toDouble(),
+                          summary.activeBnClassB.toDouble(),
+                          summary.activeBnClassC.toDouble(),
+                          summary.activeBnClassD.toDouble(),
+                        ],
+                        ['PU', 'Kelas A', 'Kelas B', 'Kelas C', 'Kelas D'],
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: _buildBarChart(
-                          [
-                            summary.activeBnPu.toDouble(),
-                            summary.activeBnClassA.toDouble(),
-                            summary.activeBnClassB.toDouble(),
-                            summary.activeBnClassC.toDouble(),
-                            summary.activeBnClassD.toDouble(),
-                          ],
-                          ['PU', 'Kelas A', 'Kelas B', 'Kelas C', 'Kelas D'],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
+                  ),
+                  const SizedBox(height: 24),
 
-                    // Activation Percentage Pie Charts
-                    const Text(
-                      'Persentase Aktivasi Anggota',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: _buildActivationPieChart(
-                                'MAL',
-                                summary.totalActiveMal,
-                                summary.totalPu,
-                              ),
+                  // Activation Percentage Pie Charts
+                  const Text(
+                    'Persentase Aktivasi Anggota',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: _buildActivationPieChart(
+                              'MAL',
+                              summary.totalActiveMal,
+                              summary.totalPu,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: _buildActivationPieChart(
-                                'BN',
-                                summary.totalActiveBn,
-                                summary.totalPu,
-                              ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: _buildActivationPieChart(
+                              'BN',
+                              summary.totalActiveBn,
+                              summary.totalPu,
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Summary Stats
-                    const Text(
-                      'Ringkasan Statistik',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    GridView.count(
-                      crossAxisCount: 3,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 6,
-                      crossAxisSpacing: 6,
-                      children: [
-                        _buildStatCard(
-                          'Total MAL',
-                          summary.totalActiveMal.toString(),
-                          Colors.blue,
-                        ),
-                        _buildStatCard(
-                          'Total BN',
-                          summary.totalActiveBn.toString(),
-                          Colors.green,
-                        ),
-                        // _buildStatCard(
-                        //   'Total Aktif',
-                        //   summary.totalActive.toString(),
-                        //   Colors.purple,
-                        // ),
-                        _buildStatCard(
-                          'Anggota Baru',
-                          summary.totalNewMember.toString(),
-                          Colors.orange,
-                        ),
-                        _buildStatCard(
-                          'Total KDPU',
-                          summary.totalKdpu.toString(),
-                          Colors.red,
-                        ),
-                        _buildStatCard(
-                          'Nominal MAL',
-                          'Rp ${summary.nominalMal}',
-                          Colors.teal,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
 
-                    // Narration Section
-                    FutureBuilder<Widget>(
-                      future: _buildNarrationSection(summary, c),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const SizedBox.shrink();
-                        }
-                        return snapshot.data ?? const SizedBox.shrink();
-                      },
-                    ),
-                  ],
-                );
-              }),
-            ],
-          ),
-        );
-      }),
+                  // Summary Stats
+                  const Text(
+                    'Ringkasan Statistik',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  GridView.count(
+                    crossAxisCount: 3,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: 6,
+                    crossAxisSpacing: 6,
+                    children: [
+                      _buildStatCard(
+                        'Total MAL',
+                        summary.totalActiveMal.toString(),
+                        Colors.blue,
+                      ),
+                      _buildStatCard(
+                        'Total BN',
+                        summary.totalActiveBn.toString(),
+                        Colors.green,
+                      ),
+                      // _buildStatCard(
+                      //   'Total Aktif',
+                      //   summary.totalActive.toString(),
+                      //   Colors.purple,
+                      // ),
+                      _buildStatCard(
+                        'Anggota Baru',
+                        summary.totalNewMember.toString(),
+                        Colors.orange,
+                      ),
+                      _buildStatCard(
+                        'Total KDPU',
+                        summary.totalKdpu.toString(),
+                        Colors.red,
+                      ),
+                      _buildStatCard(
+                        'Nominal MAL',
+                        'Rp ${summary.nominalMal}',
+                        Colors.teal,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Narration Section
+                  FutureBuilder<Widget>(
+                    future: _buildNarrationSection(summary, c),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const SizedBox.shrink();
+                      }
+                      return snapshot.data ?? const SizedBox.shrink();
+                    },
+                  ),
+                ],
+              );
+            }),
+          ],
+        ),
+      ),
     );
   }
 
