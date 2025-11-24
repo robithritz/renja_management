@@ -577,6 +577,12 @@ Color _instansiColor(Instansi i) {
       return Colors.blue;
     case Instansi.UP:
       return Colors.pink;
+    case Instansi.SYR:
+      return Colors.green;
+    case Instansi.SK:
+      return Colors.indigo;
+    case Instansi.WK_SK:
+      return Colors.brown;
   }
 }
 

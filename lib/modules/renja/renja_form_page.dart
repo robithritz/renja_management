@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:hijriyah_indonesia/hijriyah_indonesia.dart';
 
 import '../../shared/enums/instansi.dart';
 import '../../shared/enums/hijriah_month.dart';
@@ -8,6 +9,7 @@ import '../../data/models/renja.dart';
 import '../../data/models/shaf_entity.dart';
 import '../../data/repositories/shaf_api_repository.dart';
 import '../../shared/formatters/rupiah_input_formatter.dart';
+import '../../shared/controllers/auth_controller.dart';
 import 'renja_controller.dart';
 
 // GetX Controller for Renja Form
@@ -18,8 +20,8 @@ class RenjaFormController extends GetxController {
   final formKey = GlobalKey<FormState>();
 
   final dateCtrl = TextEditingController();
-  final bulanHijriah = Rx<HijriahMonth>(HijriahMonth.muharram);
-  final tahunHijriahCtrl = TextEditingController();
+  final bulanHijriah = Rx<HijriahMonth>(_getCurrentHijriahMonth());
+  final tahunHijriah = Rxn<int>(_getCurrentHijriahYear());
   final dayCtrl = TextEditingController();
   final timeCtrl = TextEditingController();
   final kegiatanCtrl = TextEditingController();
@@ -36,6 +38,34 @@ class RenjaFormController extends GetxController {
   final bengkelList = Rx<List<ShafEntity>>([]);
   final loadingBengkel = false.obs;
 
+  // Static tahun hijriah options
+  static const List<int> tahunHijriahOptions = [1447, 1448, 1449, 1450];
+
+  /// Get current Hijriah month
+  static HijriahMonth _getCurrentHijriahMonth() {
+    try {
+      final hijri = Hijriyah.fromDate(DateTime.now());
+      // Parse the formatted string to extract month name
+      // Format is "dd MMMM yyyy" e.g., "15 Muharram 1447"
+      final formatted = hijri.toFormat("MMMM");
+      return HijriahMonthX.fromDb(formatted);
+    } catch (_) {
+      return HijriahMonth.muharram;
+    }
+  }
+
+  /// Get current Hijriah year
+  static int _getCurrentHijriahYear() {
+    try {
+      final hijri = Hijriyah.fromDate(DateTime.now());
+      // Parse the formatted string to extract year
+      final formatted = hijri.toFormat("yyyy");
+      return int.tryParse(formatted) ?? 1447;
+    } catch (_) {
+      return 1447;
+    }
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -48,7 +78,7 @@ class RenjaFormController extends GetxController {
     if (e != null) {
       dateCtrl.text = e.date;
       bulanHijriah.value = e.bulanHijriah;
-      tahunHijriahCtrl.text = e.tahunHijriah.toString();
+      tahunHijriah.value = e.tahunHijriah;
       dayCtrl.text = e.day.toString();
       timeCtrl.text = e.time;
       kegiatanCtrl.text = e.kegiatanDesc;
@@ -65,6 +95,17 @@ class RenjaFormController extends GetxController {
       ).format(e.cost);
       instansi.value = e.instansi;
       selectedBengkelUuid.value = e.shafUuid;
+    } else {
+      // For new renja, prefill with logged-in user's bengkel UUID
+      try {
+        final authController = Get.find<AuthController>();
+        if (authController.currentUser.value != null) {
+          selectedBengkelUuid.value =
+              authController.currentUser.value!.bengkelUuid;
+        }
+      } catch (e) {
+        // Silently handle if AuthController is not found
+      }
     }
   }
 
@@ -84,7 +125,6 @@ class RenjaFormController extends GetxController {
   @override
   void onClose() {
     dateCtrl.dispose();
-    tahunHijriahCtrl.dispose();
     dayCtrl.dispose();
     timeCtrl.dispose();
     kegiatanCtrl.dispose();
@@ -118,7 +158,8 @@ class RenjaFormPage extends StatelessWidget {
           key: controller.formKey,
           child: Column(
             children: [
-              _buildBengkelDropdown(controller),
+              _buildBengkelDropdown(controller, isEditing: existing != null),
+              _dropdownInstansi(controller),
               _text(
                 controller.kegiatanCtrl,
                 label: 'Kegiatan (desc)',
@@ -134,16 +175,11 @@ class RenjaFormPage extends StatelessWidget {
                 children: [
                   Expanded(child: _dropdownBulanHijriah(controller)),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: _number(
-                      controller.tahunHijriahCtrl,
-                      label: 'Tahun Hijriah',
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _number(controller.dayCtrl, label: 'Day (1-31)'),
-                  ),
+                  Expanded(child: _dropdownTahunHijriah(controller)),
+                  // const SizedBox(width: 12),
+                  // Expanded(
+                  //   child: _number(controller.dayCtrl, label: 'Day (1-31)'),
+                  // ),
                 ],
               ),
               _text(
@@ -157,7 +193,7 @@ class RenjaFormPage extends StatelessWidget {
               _text(controller.targetCtrl, label: 'Target'),
               _text(controller.tujuanCtrl, label: 'Tujuan'),
               _number(controller.volumeCtrl, label: 'Volume'),
-              _dropdownInstansi(controller),
+
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: TextFormField(
@@ -178,11 +214,7 @@ class RenjaFormPage extends StatelessWidget {
                     await c.create(
                       date: controller.dateCtrl.text.trim(),
                       bulanHijriah: controller.bulanHijriah.value,
-                      tahunHijriah:
-                          int.tryParse(
-                            controller.tahunHijriahCtrl.text.trim(),
-                          ) ??
-                          0,
+                      tahunHijriah: controller.tahunHijriah.value ?? 0,
                       day: int.tryParse(controller.dayCtrl.text.trim()) ?? 1,
                       time: controller.timeCtrl.text.trim(),
                       kegiatanDesc: controller.kegiatanCtrl.text.trim(),
@@ -207,10 +239,7 @@ class RenjaFormPage extends StatelessWidget {
                         date: controller.dateCtrl.text.trim(),
                         bulanHijriah: controller.bulanHijriah.value,
                         tahunHijriah:
-                            int.tryParse(
-                              controller.tahunHijriahCtrl.text.trim(),
-                            ) ??
-                            e.tahunHijriah,
+                            controller.tahunHijriah.value ?? e.tahunHijriah,
                         day:
                             int.tryParse(controller.dayCtrl.text.trim()) ??
                             e.day,
@@ -261,6 +290,32 @@ class RenjaFormPage extends StatelessWidget {
           onChanged: (v) {
             if (v != null) controller.bulanHijriah.value = v;
           },
+        ),
+      ),
+    );
+  }
+
+  static Widget _dropdownTahunHijriah(RenjaFormController controller) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Obx(
+        () => DropdownButtonFormField<int>(
+          value: controller.tahunHijriah.value,
+          decoration: const InputDecoration(
+            labelText: 'Tahun Hijriah',
+            border: OutlineInputBorder(),
+          ),
+          hint: const Text('Pilih Tahun'),
+          items: RenjaFormController.tahunHijriahOptions
+              .map(
+                (year) =>
+                    DropdownMenuItem(value: year, child: Text(year.toString())),
+              )
+              .toList(),
+          onChanged: (v) {
+            if (v != null) controller.tahunHijriah.value = v;
+          },
+          validator: (v) => v == null ? 'Tahun Hijriah harus dipilih' : null,
         ),
       ),
     );
@@ -361,7 +416,10 @@ class RenjaFormPage extends StatelessWidget {
     }
   }
 
-  static Widget _buildBengkelDropdown(RenjaFormController controller) {
+  static Widget _buildBengkelDropdown(
+    RenjaFormController controller, {
+    required bool isEditing,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Obx(
@@ -369,9 +427,12 @@ class RenjaFormPage extends StatelessWidget {
             ? const Center(child: CircularProgressIndicator())
             : DropdownButtonFormField<String>(
                 value: controller.selectedBengkelUuid.value,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Bengkel',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
+                  helperText: !isEditing
+                      ? 'Renja akan dibuat untuk bengkel Anda'
+                      : null,
                 ),
                 hint: const Text('Pilih Bengkel'),
                 items: controller.bengkelList.value
@@ -382,9 +443,11 @@ class RenjaFormPage extends StatelessWidget {
                       ),
                     )
                     .toList(),
-                onChanged: (value) {
-                  controller.selectedBengkelUuid.value = value;
-                },
+                onChanged: isEditing
+                    ? (value) {
+                        controller.selectedBengkelUuid.value = value;
+                      }
+                    : null, // Disable when creating new renja
               ),
       ),
     );
