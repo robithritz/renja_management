@@ -332,7 +332,9 @@ class RenjaFormPage extends StatelessWidget {
             border: OutlineInputBorder(),
           ),
           items: Instansi.values
-              .map((e) => DropdownMenuItem(value: e, child: Text(e.asString)))
+              .map(
+                (e) => DropdownMenuItem(value: e, child: Text(e.displayName)),
+              )
               .toList(),
           onChanged: (v) => controller.instansi.value = v ?? Instansi.EKL,
         ),

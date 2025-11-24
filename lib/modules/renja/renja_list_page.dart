@@ -438,7 +438,7 @@ class _CalendarView extends StatelessWidget {
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('${r.time} • ${r.instansi.asString}'),
+                        Text('${r.time} • ${r.instansi.displayName}'),
                         Text(
                           'Hijriah: ${r.bulanHijriah.asString} ${r.tahunHijriah}',
                         ),
@@ -647,7 +647,7 @@ class _RenjaListItem extends StatelessWidget {
                       Expanded(
                         child: _buildInfoChip(
                           icon: Icons.business,
-                          label: renja.instansi.asString,
+                          label: renja.instansi.displayName,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -889,7 +889,7 @@ class _FilterBar extends StatelessWidget {
                       ...Instansi.values.map(
                         (e) => DropdownMenuItem<Instansi?>(
                           value: e,
-                          child: Text(e.asString),
+                          child: Text(e.displayName),
                         ),
                       ),
                     ],
@@ -1093,7 +1093,7 @@ class _FilterDialogContent extends StatelessWidget {
                   ...Instansi.values.map(
                     (e) => DropdownMenuItem<Instansi?>(
                       value: e,
-                      child: Text(e.asString),
+                      child: Text(e.displayName),
                     ),
                   ),
                 ],
@@ -1264,7 +1264,7 @@ Future<void> _exportExcel({
     // Optional: show current Instansi filter text at A3
     if (instansiFilter != null) {
       ws.getRangeByName('A3:Q3').merge();
-      ws.getRangeByName('A3').setText('DIVISI: ${instansiFilter.asString}');
+      ws.getRangeByName('A3').setText('DIVISI: ${instansiFilter.displayName}');
     }
 
     // Start table header at row 5
@@ -1329,7 +1329,7 @@ Future<void> _exportExcel({
       ws.getRangeByIndex(row, 10).setText(r.tujuan); // TUJUAN
       ws.getRangeByIndex(row, 11).setText(r.target); // TARGET
       ws.getRangeByIndex(row, 12).setNumber(r.volume); // VOLUME
-      ws.getRangeByIndex(row, 13).setText(r.instansi.asString); // INSTANSI
+      ws.getRangeByIndex(row, 13).setText(r.instansi.displayName); // INSTANSI
       ws.getRangeByIndex(row, 14).setNumber(r.cost.toDouble()); // ANGGARAN
     }
 
